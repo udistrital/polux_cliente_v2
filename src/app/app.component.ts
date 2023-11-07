@@ -44,7 +44,7 @@ export class AppComponent implements OnInit {
     oas?.addEventListener('option', (event: Event) => {
       const option = (event as CustomEvent).detail;
       if (option) {
-        setTimeout(() => (this.router.navigate([option.Url])), 50);
+        setTimeout(() => (this.router.navigate(['pages/' + option.Url])), 50);
       }
     });
 
