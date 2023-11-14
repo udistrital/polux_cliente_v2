@@ -7,16 +7,20 @@ import { Injectable } from '@angular/core';
 export class UserService {
   private userSubject = new BehaviorSubject({});
   public user$ = this.userSubject.asObservable();
+  public user: any = {};
+  public permisos: any[] = [];
 
   private permisosSubject = new BehaviorSubject({});
   public permisos$ = this.permisosSubject.asObservable();
 
   updateUser(dataUser: any): void {
     this.userSubject.next(dataUser);
+    this.user = dataUser;
   }
 
   updatePermisos(permisos: any[]): void {
     this.permisosSubject.next(permisos);
+    this.permisos = permisos;
   }
 
 }
