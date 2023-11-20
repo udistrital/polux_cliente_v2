@@ -21,7 +21,7 @@ export class ListarSolicitudesComponent implements OnInit {
     this.getSolicitudes();
   }
 
-  private getSolicitudes() {
+  private getSolicitudes(): void {
     if (this.userService.user?.user?.email) {
       this.request.get(
         environment.POLUX_MID_SERVICE,

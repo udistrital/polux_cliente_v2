@@ -1,0 +1,52 @@
+<mat-card>
+    <mat-card-title>
+        Formulario de la solicitud
+    </mat-card-title>
+    <mat-card-content style="padding-top: 2rem;">
+        <mat-form-field appearance="outline" *ngIf="!siModalidad">
+            <mat-label>Modalidad</mat-label>
+            <mat-select [(ngModel)]="modalidad" (selectionChange)="cargarDetalles()">
+                <mat-option value=0>Seleccionar</mat-option>
+                <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.Id">
+                    {{modalidad.Nombre}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+            <mat-label>Tipo de Solicitud</mat-label>
+            <mat-select [(ngModel)]="tipoSolicitudId" (selectionChange)="cargarDetalles()">
+                <mat-option value=0>Seleccionar</mat-option>
+                <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo.Id">
+                    {{tipo.TipoSolicitud.Nombre}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <form [formGroup]="formSolicitud" *ngIf="showForm">
+            <div class="form-container">
+                <mat-form-field appearance="outline">
+                    <mat-label>Título</mat-label>
+                    <input matInput placeholder="Placeholder" formControlName="modalidad">
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Resumen Propuesta</mat-label>
+                    <textarea matInput placeholder="Placeholder" formControlName="modalidad">
+                    </textarea>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <ngx-mat-file-input [placeholder]="'Propuesta'" [formControl]="controlSoporte" [accept]="'.pdf'">
+                    </ngx-mat-file-input>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Áreas de Conocimiento</mat-label>
+                    <mat-select formControlName="areas" multiple>
+                        <mat-option *ngFor="let area of areasConocimiento" [value]="area.Id">
+                            {{area.Nombre}}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+        </form>
+    </mat-card-content>
+    <mat-card-footer>
+    </mat-card-footer>
+</mat-card>

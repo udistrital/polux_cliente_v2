@@ -20,6 +20,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { NgxMatFileInputModule } from '@angular-material-components/file-input';
 
 import { Angular2SmartTableModule } from 'angular2-smart-table';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -43,7 +44,7 @@ const materialModules = [
   MatRadioModule,
   MatProgressBarModule,
   MatProgressSpinnerModule,
-  MatSlideToggleModule
+  MatSlideToggleModule,
 ];
 
 const angularForms = [
@@ -56,6 +57,7 @@ const angularForms = [
   imports: [],
   exports: [
     Angular2SmartTableModule,
+    NgxMatFileInputModule,
     ...angularForms,
     ...materialModules,
   ]

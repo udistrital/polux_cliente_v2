@@ -44,7 +44,9 @@ export class RequestManager {
         return this.http.get<any>(`${path}${endpoint}`, header).pipe(
           map(
             (res: any) => {
-              if (res && Object.prototype.hasOwnProperty.call(res, 'Body')) {
+              if (res && Array.isArray(res) && !Object.keys(res[0]).length) {
+                return [];
+              } else if (res && Object.prototype.hasOwnProperty.call(res, 'Body')) {
                 return res.Body;
               } else {
                 return res;
