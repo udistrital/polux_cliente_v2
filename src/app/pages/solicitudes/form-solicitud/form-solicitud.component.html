@@ -1,52 +1,131 @@
 <mat-card>
-    <mat-card-title>
+    <mat-card-header>
         Formulario de la solicitud
-    </mat-card-title>
+    </mat-card-header>
     <mat-card-content style="padding-top: 2rem;">
         <mat-form-field appearance="outline" *ngIf="!siModalidad">
             <mat-label>Modalidad</mat-label>
-            <mat-select [(ngModel)]="modalidad" (selectionChange)="cargarDetalles()">
+            <mat-select [(ngModel)]="modalidad" (selectionChange)="cargaTiposSolicitudInicial()">
                 <mat-option value=0>Seleccionar</mat-option>
                 <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.Id">
                     {{modalidad.Nombre}}
                 </mat-option>
             </mat-select>
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" *ngIf="modalidad">
             <mat-label>Tipo de Solicitud</mat-label>
-            <mat-select [(ngModel)]="tipoSolicitudId" (selectionChange)="cargarDetalles()">
+            <mat-select [(ngModel)]="tipoSolicitudId" (selectionChange)="cargarFormularioSolicitud()">
                 <mat-option value=0>Seleccionar</mat-option>
-                <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo.Id">
+                <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo.TipoSolicitud.Id">
                     {{tipo.TipoSolicitud.Nombre}}
                 </mat-option>
             </mat-select>
         </mat-form-field>
-        <form [formGroup]="formSolicitud" *ngIf="showForm">
-            <div class="form-container">
-                <mat-form-field appearance="outline">
-                    <mat-label>Título</mat-label>
-                    <input matInput placeholder="Placeholder" formControlName="modalidad">
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Resumen Propuesta</mat-label>
-                    <textarea matInput placeholder="Placeholder" formControlName="modalidad">
-                    </textarea>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <ngx-mat-file-input [placeholder]="'Propuesta'" [formControl]="controlSoporte" [accept]="'.pdf'">
-                    </ngx-mat-file-input>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                    <mat-label>Áreas de Conocimiento</mat-label>
-                    <mat-select formControlName="areas" multiple>
-                        <mat-option *ngFor="let area of areasConocimiento" [value]="area.Id">
-                            {{area.Nombre}}
-                        </mat-option>
-                    </mat-select>
-                </mat-form-field>
+        <div *ngFor="let detalle of detalles">
+            <div *ngIf="detalle?.Detalle?.TipoDetalle?.Nombre === 'Label'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <div class="col-sm-9 ">
+                    <label class="control-label"> {{detalle.opciones[0]?.NOMBRE}}</label>
+                </div>
             </div>
-        </form>
+
+            <mat-form-field appearance="outline" *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Texto'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <input type="text" matInput [(ngModel)]="detalle.respuesta" required>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Numerico'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <input type="number" matInput [(ngModel)]="detalle.respuestaNumerica" required>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Documento'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <ngx-mat-file-input [(ngModel)]="detalle.fileModel" [accept]="'.pdf'">
+                </ngx-mat-file-input>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline"
+                *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Checkbox' && detalle.Detalle.Enunciado !== 'AUTORIZACION_DERECHOS_AUTOR'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <input type="checkbox" matInput [(ngModel)]="detalle.bool">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline"
+                *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Checkbox' && detalle.Detalle.Enunciado === 'AUTORIZACION_DERECHOS_AUTOR' && estudiantesTg.length">
+                <mat-label>{{detalle.label}}</mat-label>
+                <!-- <label class="col-sm-12 control-label" translate="AUTORIZACION_DERECHOS_AUTOR"
+                    translate-values='{ nombre: "{{crearSolicitud.estudiante.Nombre}}", codigo: {{crearSolicitud.estudiante.Codigo}}, tg: "{{crearSolicitud.trabajo_grado_completo.Titulo}}" }'>
+                </label> -->
+                <input type="checkbox" matInput [(ngModel)]="detalle.bool" required>
+            </mat-form-field>
+
+            <div *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Lista' && detalle.Detalle.Enunciado === 'CLASIFICACION_REVISTA'"
+                class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row">
+                        <label class="col-sm-12 control-label" translate="MENSAJE_REVISTA"></label>
+                    </div>
+                </div>
+            </div>
+
+            <mat-form-field appearance="outline" *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Lista'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <mat-select [(ngModel)]="detalle.respuesta" required>
+                    <mat-option *ngFor="let opcion of detalle.opciones" [value]="opcion.bd">
+                        {{opcion.NOMBRE}}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Radio'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <input type="radio" matInput [(ngModel)]="detalle.bool">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'TextArea'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <textarea matInput rows="8" cols="100" [(ngModel)]="detalle.respuesta" required></textarea>
+            </mat-form-field>
+
+            <div *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Directiva'">
+                <!-- <solicitar-asignaturas e="crearSolicitud.carrerasElegidas" estudiante="crearSolicitud.estudiante"
+                    modalidad="crearSolicitud.modalidad"
+                    ng-if="detalle.Detalle.Descripcion=='solicitar-asignaturas'"></solicitar-asignaturas>
+                <asignar-estudiantes estudiante="crearSolicitud.codigo" estudiantes="crearSolicitud.estudiantes"
+                    modalidad="crearSolicitud.modalidad"
+                    ng-if="detalle.Detalle.Descripcion=='asignar-estudiantes' && crearSolicitud.modalidad!=2 && crearSolicitud.modalidad!=3"></asignar-estudiantes>
+                <div class="panel panel-default" ng-if="detalle.Detalle.Descripcion=='asignar-area'">
+                    <div class="panel-heading">
+                        {{'AREAS_CONOCIMIENTO' | translate}}
+                    </div>
+                    <div class="panel-body">
+                        <label class="col-sm-5 control-label">{{'SELECCIONE_AREAS_CONOCIMIENTO' | translate}}</label>
+                        <asignar-area class="col-sm-7 control-label" setareas="crearSolicitud.areas"
+                            newarea="crearSolicitud.estudiante.areas_elegidas"></asignar-area>
+                    </div>
+                </div> -->
+            </div>
+            <div *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'linkNuxeo'" class="row">
+                <label class="col-sm-3 control-label"> {{detalle.label}}</label>
+                <label ng-click="crearSolicitud.getDocumento(detalle.respuesta)" class="col-sm-9 "
+                    style="color:blue; text-decoration: underline;">
+                    <!-- {{ 'VER_DOCUMENTO' | translate}}  -->
+                </label>
+            </div>
+            <mat-form-field *ngIf="detalle.Detalle.TipoDetalle.Nombre === 'Selector'">
+                <mat-label>{{detalle.label}}</mat-label>
+                <input type="text" placeholder="Seleccione" aria-label="Number" matInput [(ngModel)]="detalle.respuesta"
+                    [matAutocomplete]="auto">
+                <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayOption">
+                    <mat-option *ngFor="let option of detalle.opciones" [value]="option">
+                        {{option?.NOMBRE}}
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
+        </div>
     </mat-card-content>
-    <mat-card-footer>
-    </mat-card-footer>
+    <mat-card-actions>
+        <button type="button" mat-raised-button color="primary">ENVIAR_SOLICITUD</button>
+    </mat-card-actions>
 </mat-card>

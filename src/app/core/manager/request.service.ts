@@ -46,6 +46,12 @@ export class RequestManager {
             (res: any) => {
               if (res && Array.isArray(res) && !Object.keys(res[0]).length) {
                 return [];
+              } else if (res && res.Data) {
+                if (Array.isArray(res.Data) && !Object.keys(res.Data[0]).length) {
+                  return [];
+                } else {
+                  return res.Data
+                }
               } else if (res && Object.prototype.hasOwnProperty.call(res, 'Body')) {
                 return res.Body;
               } else {
