@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControlOptions, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { environment } from 'src/environments/environment';
-import { RequestManager } from 'src/app/core/manager/request.service';
 import * as moment from 'moment';
 import { UserService } from '../../services/userService';
+import { RequestManager } from 'src/app/core/manager/request.service';
 import { GestorDocumentalService } from '../../services/gestorDocumentalService';
+import { Modalidad } from 'src/app/shared/models/modalidad.model';
+import { ModalidadTipoSolicitud } from 'src/app/shared/models/modalidadTipoSolicitud.model';
+import { DetalleTipoSolicitud, DetalleTipoSolicitudForm } from 'src/app/shared/models/detalleTipoSolicitud.model';
+import { TipoSolicitud } from 'src/app/shared/models/tipoSolicitud.model';
 
 @Component({
   selector: 'app-form-solicitud',
@@ -12,21 +15,19 @@ import { GestorDocumentalService } from '../../services/gestorDocumentalService'
   styleUrls: ['./form-solicitud.component.scss']
 })
 export class FormSolicitudComponent implements OnInit {
-  formSolicitud: FormGroup = this.initForm();
-
-  modalidades: any[] = [];
+  modalidades: Modalidad[] = [];
+  tiposSolicitud: ModalidadTipoSolicitud[] = []; // Solicitudes realizadas por el estudiante anteriormente
   areasConocimiento: any[] = [];
 
-  // * @property {Array} modalidades Modalidades disponibles para la elección del estudiante.
+  tipoSolicitudSeleccionada: ModalidadTipoSolicitud = new ModalidadTipoSolicitud();
+
   // * @property {Object} estudiante Datos del estudiante que esta realizando la solicitud.
   periodoAnterior: any = {};
   periodoActual: any = {};
   periodoSiguiente: any = {};
-  tiposSolicitud: any[] = []; // Solicitudes realizadas por el estudiante anteriormente
-  detalles: any[] = []; //Detalles cargados para mostrar en el formulario que se asocian con la modalidad y el tipo de solicitud escogidas por el solicitante.
+  detalles: DetalleTipoSolicitudForm[] = []; //Detalles cargados para mostrar en el formulario que se asocian con la modalidad y el tipo de solicitud escogidas por el solicitante.
   areas: any[] = []; // Areas del conocimiento.
   espaciosElegidos: any[] = []; //Objeto que contiene los espacios elegidos por el estudiante en la solicitud inicial.
-  // * @property {Boolean} detallesCargados Flag que indica que los detalles terminaron de cargarse..
   siPuede = false; // Flag que permite identificar si se puede realizar la solicitud (el estudiante cumple con los requisitos y se encuentra en las fechas para hacerlo)
   // * @property {Boolean} restringirModalidadesPosgrado Flag que permite identificar si se deben restringir las demas modalidades debido a que el estudiante ya realizo una solicitud inicial de materias de posgrado.
   estudiantesTg: any[] = []; // Estudiantes asociados al tranajo de grado.
@@ -34,14 +35,12 @@ export class FormSolicitudComponent implements OnInit {
   Trabajo: any = {};// Datos del trabajo de grado que cursa el estudiante que esta realizando la solicitud.
   siModalidad = false; // Indicador que maneja la habilitación de una modalidad
   modalidadSelect = false;// Indicador que maneja la selección de una modalidad
-  tipoSolicitudId = 0;
   // * @property {Boolean} solicitudConDetalles Indicador que maneja el contenido de los detalles dentro de una solicitud
   // * @property {Boolean} restringirModalidadesProfundizacion Indicador que maneja la restricción de modalidades para crear solicitud y solo habilita la modalidad de profundización
   detallesConDocumento: any[] = []; // Colección que maneja los detalles con documento de una solicitud
   tieneProrrogas = false // Indicador que maneja si existen prórrogas registradas para el estudiante que realiza la solicitud
   codigo = '';// Texto que carga el código del estudiante en sesión
   mensajeErrorCarga = '';// Texto que aparece en caso de haber un error durante la carga de información
-  // * @property {Object} modalidad Objeto que carga el contenido de la modalidad seleccionada
   // * @property {Object} Trabajo Objeto que carga la información del estudiante con trabajo de grado registrado
   carreraElegida: any = {};// Objeto que carga la información sobre la carrera elegida por el estudiante
   trabajo_grado_completo: any = {}; // Objeto que carga la información del trabajo de grado en curso
@@ -54,37 +53,27 @@ export class FormSolicitudComponent implements OnInit {
   fechaInicio = '';
   fechaFin = '';
   // * @property {Boolean} errorParametros Indicador que maneja la aparición de un error durante la carga de parámetros
-  TipoSolicitud: any; // Objeto que carga la información del tipo de solicitud seleccionada
-  modalidadTipoSolicitudId = 0; // Valor que carga el identificador del tipo de solicitud asociada a una modalidad
   erroresFormulario = false; // Indicador que maneja la aparición de errores durante el diligenciamiento del formulario
   // * @property {Object} solicitud Contenido que va a registrarse en la base de datos sobre la solicitud
   // * @property {Object} doc Objeto que carga la información sobre el documento que se obtiene
   // * @property {Object} document Objeto que carga la información sobre el documento que se obtiene
   // * @property {Object} blob Objeto que carga la información sobre el Blob del documento en carga
   // * @property {Object} content Objeto que define las propiedades de visualización para el documento en carga
-  // * @property {Boolean} cargandoParametros Texto que aparece durante la carga de parámetros en la vista
-  // * @property {Boolean} enviandoFormulario Texto que aparece durante el envío del formulario
-  // * @property {Boolean} cargandoDetalles Texto que aparece durante la carga de detalles en el módulo
-  // * @property {Boolean} loadParametros Indicador que define el periodo de carga para los parámetros
-  // * @property {Object} infiniteScroll Objeto que configura las propiedades para la barra de desplazamiento en la visualización
-  // * @property {Boolean} loadDetalles Indicador que define el periodo de carga para los detalles de la solicitud
-  // * @property {Boolean} loadFormulario Indicador que define el periodo de carga para el formulario
   posDocente = 0; // Posición en la que se encuentra la información del docente en los detalles del tipo de solicitud
   docDocenteDir = ''; // Documento del docente director
   // * @property {Number} contador contador para no repetir valores en la modalidad de pasantia
   Nota = false; // flag que indica si el trabajo de grado ya está calificado
   url = 'url';
 
-  Docente_solicitudes: any[] = [];
   loadDocenteSolicitud = false;
-  Docente_trabajos = false;
-  tipoSolicitud_Docente = 0;
   showForm = false;
+  modalidadId = 0;
+  estudiante: any = {};
 
   constructor(
     private request: RequestManager,
     private userService: UserService,
-    private gestorDocumental: GestorDocumentalService
+    private gestorDocumental: GestorDocumentalService,
   ) {
     this.codigo = this.userService.user.userService?.Codigo;
   }
@@ -106,14 +95,21 @@ export class FormSolicitudComponent implements OnInit {
       })
   }
 
-  private initForm(): FormGroup {
-    const ff: FormGroup = new FormGroup({});
-    return ff;
-  }
-
-
-  get controlSoporte() {
-    return this.formSolicitud.get('soporte') as FormControl;
+  onInputFileDocumento(event: any) {
+    const sizeSoporte = 8;
+    if (event.target.files.length > 0) {
+      const file = event.target.files[0];
+      if (file.type === 'application/pdf' && file.size < sizeSoporte * 1024000) {
+        file.urlTemp = URL.createObjectURL(event.srcElement.files[0]);
+        file.IdDocumento = 13; // tipo de documento (API documentos_crud)
+        file.file = event.target.files[0];
+        file.nombre = file.name;
+        console.log(file.file)
+        // this.fileDocumento[index] = file;
+      } else {
+        // this.pUpManager.showErrorAlert('error' + this.translate.instant('GLOBAL.error'));
+      }
+    }
   }
 
   private verificarRequisitos(): Promise<void> {
@@ -134,12 +130,9 @@ export class FormSolicitudComponent implements OnInit {
 
   }
 
-  modalidad = 0;
-  estudiante: any = {};
-  Docente = 0;
   private verificarRequisitosModalidad(): void {
     if (!this.estudiante.Modalidad) {
-      this.estudiante.Modalidad = this.modalidad;
+      this.estudiante.Modalidad = this.modalidadId;
     }
     this.request.post(
       environment.POLUX_MID_SERVICE, `verificarRequisitos/Registrar`, this.estudiante)
@@ -148,7 +141,7 @@ export class FormSolicitudComponent implements OnInit {
         if (requisitos.data.RequisitosModalidades) {
           return true;
         } else {
-          return this.Docente === 1;
+          return false;
         }
       })
   }
@@ -204,7 +197,7 @@ export class FormSolicitudComponent implements OnInit {
       if (this.trabajoGrado.EstadoTrabajoGrado.Id === 17) {
         return true;
       } else {
-        // ctrl.mensajeError = $translate.instant("ERROR.ESTADO_TRABAJO_GRADO_NO_PERMITE", {
+        // ctrl.mensajeError = $translate.instant('ERROR.ESTADO_TRABAJO_GRADO_NO_PERMITE', {
         //   estado_tg: ctrl.trabajoGrado.EstadoTrabajoGrado.Nombre,
         //   tipoSolicitud: tipoSolicitud.TipoSolicitud.Nombre,
         // });
@@ -216,7 +209,7 @@ export class FormSolicitudComponent implements OnInit {
       if (this.trabajoGrado.EstadoTrabajoGrado.Id === 13 || this.trabajoGrado.EstadoTrabajoGrado.Id === 16) {
         return true;
       } else {
-        // ctrl.mensajeError = $translate.instant("ERROR.ESTADO_TRABAJO_GRADO_NO_PERMITE", {
+        // ctrl.mensajeError = $translate.instant('ERROR.ESTADO_TRABAJO_GRADO_NO_PERMITE', {
         //   estado_tg: ctrl.trabajoGrado.EstadoTrabajoGrado.Nombre,
         //   tipoSolicitud: tipoSolicitud.TipoSolicitud.Nombre,
         // });
@@ -305,7 +298,7 @@ export class FormSolicitudComponent implements OnInit {
           const promises = [];
           if (responseTrabajoEstudiante.length) {
             this.Trabajo = responseTrabajoEstudiante[0];
-            this.modalidad = responseTrabajoEstudiante[0].TrabajoGrado.Modalidad.Id;
+            this.modalidadId = responseTrabajoEstudiante[0].TrabajoGrado.Modalidad.Id;
             this.trabajo_grado_completo = responseTrabajoEstudiante[0].TrabajoGrado;
             this.trabajoGradoId = responseTrabajoEstudiante[0].TrabajoGrado.Id;
             this.trabajoGrado = responseTrabajoEstudiante[0].TrabajoGrado;
@@ -313,44 +306,13 @@ export class FormSolicitudComponent implements OnInit {
             this.modalidadSelect = true;
             // Buscar de autores del tg
             this.getEstudiantesTg(this.trabajoGradoId);
-            this.cargarTipoSolicitud(this.modalidad);
+            this.cargarTipoSolicitud();
             this.getVinculadosTg(this.trabajoGradoId);
-            if (this.modalidad === 2 || this.modalidad === 3) {
+            if (this.modalidadId === 2 || this.modalidadId === 3) {
               promises.push(this.getEspaciosInscritos(this.trabajoGradoId));
             }
           } else {
-            if (this.Docente == 1) {
-              const payload = 'query=Usuario:' + this.codigo + ',Activo:true,RolTrabajoGrado:3';
-              this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${payload}`)
-                .subscribe((responseVinculacion) => {
-                  responseVinculacion.forEach((solicitud: any) => {
-                    if (solicitud.TrabajoGrado.EstadoTrabajoGrado.Id === 17) {
-                      this.Docente_solicitudes.push(solicitud);
-                      // this.loadDocenteSolicitud = true;
-                    }
-                  });
-                  if (responseVinculacion.length) {
-                    this.Trabajo = responseVinculacion[0];
-                    this.modalidad = responseVinculacion[0].TrabajoGrado.Modalidad.Id;
-                    this.trabajo_grado_completo = responseVinculacion[0].TrabajoGrado;
-                    this.trabajoGradoId = responseVinculacion[0].TrabajoGrado.Id;
-                    this.trabajoGrado = responseVinculacion[0].TrabajoGrado;
-                    this.siModalidad = true;
-                    this.modalidadSelect = true;
-                    //buscar # de autores del tg
-                    promises.push(this.getEstudiantesTg(this.trabajoGrado));
-                    promises.push(this.cargarTipoSolicitud(this.modalidad));
-                    promises.push(this.getVinculadosTg(this.trabajoGrado));
-                    if (this.modalidad == 2 || this.modalidad == 3) {
-                      promises.push(this.getEspaciosInscritos(this.trabajoGradoId));
-                    }
-                  }
-                });
-            } else {
-              promises.push(this.getModalidades());
-              //obtener solicitudes iniciales anteriores hechas por el usuario modalidad de posgrado
-              //promises.push(getSolicitudesAnteriores());
-            }
+            promises.push(this.getModalidades());
           }
 
           await Promise.all(promises);
@@ -368,7 +330,7 @@ export class FormSolicitudComponent implements OnInit {
           this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${payload}`)
 
             .subscribe((vinculacion_trabajo_grado) => {
-              for (var i = 0; i < vinculacion_trabajo_grado.length; i++) {
+              for (let i = 0; i < vinculacion_trabajo_grado.length; i++) {
                 const payload = `query=VinculacionTrabajoGrado:${vinculacion_trabajo_grado[i].Id}&limit=0`;
                 this.request.get(environment.POLUX_SERVICE, `evaluacion_trabajo_grado?${payload}`)
                   .subscribe((evaluacion_trabajo_grado_results) => {
@@ -442,20 +404,16 @@ export class FormSolicitudComponent implements OnInit {
         if (responseModalidad.length) {
           this.modalidades = responseModalidad;
         } else {
-          // ctrl.mensajeErrorCarga = $translate.instant("ERROR.SIN_MODALIDADES");
-          // defer.reject("No hay modalidades registradas");
+          // ctrl.mensajeErrorCarga = $translate.instant('ERROR.SIN_MODALIDADES');
+          // defer.reject('No hay modalidades registradas');
         }
       })
   }
 
   // ctrl.cargarTipoSolicitud
-  private cargarTipoSolicitud(modalidad: any): void {
+  private cargarTipoSolicitud(): void {
     this.tiposSolicitud = [];
-    if (this.Docente !== 0 && !modalidad) {
-      modalidad = 1;
-    }
-
-    const payload = 'query=Modalidad:' + modalidad + ',TipoSolicitud.Activo:true&limit=0';
+    const payload = `query=Modalidad:${this.modalidadId},TipoSolicitud.Activo:true&limit=0`;
     this.request.get(environment.POLUX_SERVICE, `modalidad_tipo_solicitud?${payload}`)
       .subscribe((responseTiposSolicitudes) => {
         responseTiposSolicitudes = responseTiposSolicitudes
@@ -463,11 +421,7 @@ export class FormSolicitudComponent implements OnInit {
         if (this.tieneProrrogas) {
           this.tiposSolicitud = responseTiposSolicitudes.filter((s: any) => s.TipoSolicitud.Id !== 7);
         } else {
-          if (this.Docente === 1) {
-            this.tiposSolicitud = responseTiposSolicitudes.filter((s: any) => s.TipoSolicitud.Id === 6);
-          } else {
-            this.tiposSolicitud = responseTiposSolicitudes.filter((s: any) => s.TipoSolicitud.Id !== 6);
-          }
+          this.tiposSolicitud = responseTiposSolicitudes.filter((s: any) => s.TipoSolicitud.Id !== 6);
         }
       });
   }
@@ -481,8 +435,8 @@ export class FormSolicitudComponent implements OnInit {
             this.periodo = this.periodoActual.anio + '-' + this.periodoActual.periodo;
             resolve();
           } else {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.SIN_PERIODO");
-            // defer.reject("sin periodo");
+            // ctrl.mensajeErrorCarga = $translate.instant('ERROR.SIN_PERIODO');
+            // defer.reject('sin periodo');
           }
         });
     });
@@ -495,8 +449,8 @@ export class FormSolicitudComponent implements OnInit {
           if (responsePeriodo.periodoAcademicoCollection.periodoAcademico) {
             this.periodoAnterior = responsePeriodo.periodoAcademicoCollection.periodoAcademico[0];
           } else {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.SIN_PERIODO");
-            // defer.reject("sin periodo");
+            // ctrl.mensajeErrorCarga = $translate.instant('ERROR.SIN_PERIODO');
+            // defer.reject('sin periodo');
           }
           resolve();
         })
@@ -510,8 +464,8 @@ export class FormSolicitudComponent implements OnInit {
           if (responsePeriodo.periodoAcademicoCollection.periodoAcademico) {
             this.periodoSiguiente = responsePeriodo.periodoAcademicoCollection.periodoAcademico[0];
           } else {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.SIN_PERIODO");
-            // defer.reject("sin periodo");
+            // ctrl.mensajeErrorCarga = $translate.instant('ERROR.SIN_PERIODO');
+            // defer.reject('sin periodo');
           }
           resolve();
         });
@@ -537,7 +491,7 @@ export class FormSolicitudComponent implements OnInit {
               { Id: 8, estado, Nombre: 'MATEMATICAS Y CIENCIAS NATURALES' },
               { Id: 9, estado, Nombre: 'SIN CLASIFICAR' }
             ];
-            //  coreAmazonCrudService.get("snies_area").then(function(responseAreas) {
+            //  coreAmazonCrudService.get('snies_area').then(function(responseAreas) {
             //      var areasSnies = responseAreas.data;
             if (Object.keys(areasSnies[0]).length > 0) {
               this.areas.forEach((area) => {
@@ -550,18 +504,18 @@ export class FormSolicitudComponent implements OnInit {
               //
               resolve();
             } else {
-              // ctrl.mensajeErrorCarga = $translate.instant("ERROR.CARGAR_AREAS");
-              // defer.reject("no hay areas");
+              // ctrl.mensajeErrorCarga = $translate.instant('ERROR.CARGAR_AREAS');
+              // defer.reject('no hay areas');
             }
             /*  })
               .catch(function(error) {
-                ctrl.mensajeErrorCarga = $translate.instant("ERROR.CARGAR_AREAS");
+                ctrl.mensajeErrorCarga = $translate.instant('ERROR.CARGAR_AREAS');
                 defer.reject(error);
               });
               */
           } else {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.CARGAR_AREAS");
-            // defer.reject("no hay areas");
+            // ctrl.mensajeErrorCarga = $translate.instant('ERROR.CARGAR_AREAS');
+            // defer.reject('no hay areas');
           }
         });
     })
@@ -574,10 +528,10 @@ export class FormSolicitudComponent implements OnInit {
           this.estudiante = {
             Codigo: this.codigo,
             Nombre: response2.estudianteCollection.datosEstudiante[0].nombre,
-            Modalidad: this.modalidad,
+            Modalidad: this.modalidadId,
             Tipo: 'POSGRADO',
             PorcentajeCursado: response2.estudianteCollection.datosEstudiante[0].porcentaje_cursado,
-            // "PorcentajeCursado": response2.data.estudianteCollection.datosEstudiante[0].creditosCollection.datosCreditos[0].porcentaje.porcentaje_cursado[0].porcentaje_cursado,
+            // 'PorcentajeCursado': response2.data.estudianteCollection.datosEstudiante[0].creditosCollection.datosCreditos[0].porcentaje.porcentaje_cursado[0].porcentaje_cursado,
             Promedio: response2.estudianteCollection.datosEstudiante[0].promedio,
             Rendimiento: response2.estudianteCollection.datosEstudiante[0].rendimiento,
             Estado: response2.estudianteCollection.datosEstudiante[0].estado,
@@ -587,8 +541,8 @@ export class FormSolicitudComponent implements OnInit {
           };
 
           if (this.estudiante.Nombre === undefined) {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.CARGAR_DATOS_ESTUDIANTE");
-            // defer.reject("datos del estudiante invalidos");
+            // ctrl.mensajeErrorCarga = $translate.instant('ERROR.CARGAR_DATOS_ESTUDIANTE');
+            // defer.reject('datos del estudiante invalidos');
           } else {
             this.estudiante.asignaturas_elegidas = [];
             this.estudiante.areas_elegidas = [];
@@ -597,97 +551,82 @@ export class FormSolicitudComponent implements OnInit {
           }
           // this.cargarDetalles(false);
         } else {
-          if (this.Docente === 1) {
-            // resolve(true);
-          } else {
-            // ctrl.mensajeErrorCarga = $translate.instant("ERROR.ESTUDIANTE_NO_ENCONTRADO");
-            // defer.reject("no se encuentran datos estudiante");
-          }
+          // ctrl.mensajeErrorCarga = $translate.instant('ERROR.ESTUDIANTE_NO_ENCONTRADO');
+          // defer.reject('no se encuentran datos estudiante');
         }
       })
     // .catch(function (error) {
-    //   ctrl.mensajeErrorCarga = $translate.instant("ERROR.CARGAR_DATOS_ESTUDIANTE");
+    //   ctrl.mensajeErrorCarga = $translate.instant('ERROR.CARGAR_DATOS_ESTUDIANTE');
     //   defer.reject(error);
     // });
-  }
-
-  private getModalidadTipoSolicitud(): Promise<void> {
-    return new Promise((resolve) => {
-      const payload = `query=TipoSolicitud.Id:${this.tipoSolicitudId},Modalidad.Id:${this.modalidad}&limit=1`;
-      this.request.get(environment.POLUX_SERVICE, `modalidad_tipo_solicitud?${payload}`)
-        .subscribe((responseModalidadTipoSolicitud) => {
-          this.modalidadTipoSolicitudId = responseModalidadTipoSolicitud[0].Id;
-          resolve();
-        })
-    })
   }
 
   private getOpcionesPolux(detalle: any, parametrosServicio: string[], parametrosConsulta: any[], sql: string): Promise<void> {
     return new Promise((resolve) => {
       if (parametrosServicio[2] !== undefined) {
-        parametrosConsulta = parametrosServicio[2].split(",");
+        parametrosConsulta = parametrosServicio[2].split(',');
         parametrosConsulta.forEach((parametro) => {
-          if (!parametro.includes(":")) {
-            if (parametro == "trabajo_grado") {
-              parametro = parametro + ":" + this.trabajoGradoId;
+          if (!parametro.includes(':')) {
+            if (parametro == 'trabajo_grado') {
+              parametro = parametro + ':' + this.trabajoGradoId;
             }
-            if (parametro == "carrera_elegible") {
-              parametro = parametro + ":" + this.carreraElegida;
+            if (parametro == 'carrera_elegible') {
+              parametro = parametro + ':' + this.carreraElegida;
             }
             /* //Si el parametro es activo se deja tal y como esta en la bd
-            if (parametro == "activo") {
+            if (parametro == 'activo') {
               parametro = parametro;
             }*/
-            if (parametro == "id") {
-              parametro = parametro + ":" + this.trabajoGradoId;
+            if (parametro == 'id') {
+              parametro = parametro + ':' + this.trabajoGradoId;
             }
           }
-          if (sql === "") {
+          if (sql === '') {
             sql = parametro;
           } else {
-            sql = sql + "," + parametro;
+            sql = sql + ',' + parametro;
           }
         });
         detalle.parametros = `query=${sql}&limit=0`;
       }
       this.request.get(environment.POLUX_SERVICE, `${parametrosServicio[1]}?${detalle.parametros}`)
         .subscribe(async (responseOpciones) => {
-          if (detalle.Detalle.Nombre.includes("Nombre actual de la propuesta")) {
+          if (detalle.Detalle.Nombre.includes('Nombre actual de la propuesta')) {
             detalle.opciones.push({
               NOMBRE: responseOpciones[0].Titulo,
               bd: responseOpciones[0].Titulo,
             });
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Actual resumen de la propuesta")) {
+          } else if (detalle.Detalle.Nombre.includes('Actual resumen de la propuesta')) {
             detalle.opciones.push({
               NOMBRE: responseOpciones[0].DocumentoEscrito.Resumen,
               bd: responseOpciones[0].DocumentoEscrito.Resumen
             });
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Propuesta actual")) {
+          } else if (detalle.Detalle.Nombre.includes('Propuesta actual')) {
             detalle.respuesta = responseOpciones[0].DocumentoEscrito.Enlace;
             //
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Areas de conocimiento actuales")) {
+          } else if (detalle.Detalle.Nombre.includes('Areas de conocimiento actuales')) {
             //
-            var areasString = "";
+            var areasString = '';
             responseOpciones.forEach((area: any) => {
-              areasString = areasString + ", " + area.AreaConocimiento.Nombre;
+              areasString = areasString + ', ' + area.AreaConocimiento.Nombre;
             });
             detalle.opciones.push({
               NOMBRE: areasString.substring(2),
               bd: areasString.substring(2)
             });
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Nombre Empresa")) {
+          } else if (detalle.Detalle.Nombre.includes('Nombre Empresa')) {
             responseOpciones.forEach((empresa: any) => {
               detalle.opciones.push({
-                NOMBRE: empresa.Identificacion + "",
-                bd: empresa.Identificacion + "",
+                NOMBRE: empresa.Identificacion + '',
+                bd: empresa.Identificacion + '',
               });
             });
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Espacio Academico Anterior")) {
+          } else if (detalle.Detalle.Nombre.includes('Espacio Academico Anterior')) {
             const promisesEspacio: any[] = [];
             responseOpciones.forEach((espacio: any) => {
               promisesEspacio.push(this.getEspacioAnterior(detalle, espacio));
@@ -695,7 +634,7 @@ export class FormSolicitudComponent implements OnInit {
 
             await Promise.all(promisesEspacio);
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Evaluador Actual")) {
+          } else if (detalle.Detalle.Nombre.includes('Evaluador Actual')) {
             const promisesDocente: any = []
             responseOpciones.forEach((evaluador: any) => {
               promisesDocente.push(this.getDocente(evaluador, detalle));
@@ -703,7 +642,7 @@ export class FormSolicitudComponent implements OnInit {
 
             await Promise.all(promisesDocente);
             resolve()
-          } else if (detalle.Detalle.Nombre.includes("Director Actual")) {
+          } else if (detalle.Detalle.Nombre.includes('Director Actual')) {
             this.request.get(environment.ACADEMICA_SERVICE, `docente_tg/${this.Trabajo.directorInterno.Usuario}`)
               .subscribe((docente) => {
                 if (docente.docenteTg.docente) {
@@ -714,7 +653,7 @@ export class FormSolicitudComponent implements OnInit {
                 }
                 resolve();
               })
-          } else if (detalle.Detalle.Nombre.includes("Codirector Actual")) {
+          } else if (detalle.Detalle.Nombre.includes('Codirector Actual')) {
             if (this.Trabajo.codirector) {
               this.request.get(environment.ACADEMICA_SERVICE, `docente_tg/${this.Trabajo.codirector.Usuario}`)
                 .subscribe((docente) => {
@@ -727,9 +666,9 @@ export class FormSolicitudComponent implements OnInit {
                   resolve();
                 })
             } else {
-              // defer.reject("Sin codirector");
+              // defer.reject('Sin codirector');
             }
-          } else if (detalle.Detalle.Nombre.includes("Espacio Academico Nuevo")) {
+          } else if (detalle.Detalle.Nombre.includes('Espacio Academico Nuevo')) {
             const promises: any[] = [];
             responseOpciones.forEach((espacio: any) => {
               var esta = false;
@@ -745,15 +684,15 @@ export class FormSolicitudComponent implements OnInit {
 
             await Promise.all(promises);
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Nombre del anterior director externo")) {
-            let temp = responseOpciones[0].Observaciones.split(" y dirigida por ");
-            temp = temp[1].split(" con número de identificacion ");
+          } else if (detalle.Detalle.Nombre.includes('Nombre del anterior director externo')) {
+            let temp = responseOpciones[0].Observaciones.split(' y dirigida por ');
+            temp = temp[1].split(' con número de identificacion ');
             detalle.opciones.push({
-              NOMBRE: temp[1] + " - " + temp[0],
+              NOMBRE: temp[1] + ' - ' + temp[0],
               bd: temp[1]
             });
             resolve();
-          } else if (detalle.Detalle.Nombre.includes("Nombre de evaluador(es) actuales")) {
+          } else if (detalle.Detalle.Nombre.includes('Nombre de evaluador(es) actuales')) {
             const promisasDocente: any[] = []
             responseOpciones.forEach((evaluador: any) => {
               promisasDocente.push(this.obtenerDocente(evaluador, detalle));
@@ -762,11 +701,11 @@ export class FormSolicitudComponent implements OnInit {
             Promise.all(promisasDocente)
               .then((evaluadores) => {
                 detalle.opciones.push({
-                  NOMBRE: evaluadores.map((evaluador) => { return evaluador.nombre }).join(", "),
-                  bd: evaluadores.map((evaluador) => { return evaluador.id }).join(",")
+                  NOMBRE: evaluadores.map((evaluador) => { return evaluador.nombre }).join(', '),
+                  bd: evaluadores.map((evaluador) => { return evaluador.id }).join(',')
                 });
               })
-          } else if (detalle.Detalle.Nombre.includes("Objetivo Actual")) {
+          } else if (detalle.Detalle.Nombre.includes('Objetivo Actual')) {
             detalle.opciones.push({
               NOMBRE: responseOpciones[0].Objetivo,
               bd: responseOpciones[0].Objetivo,
@@ -813,27 +752,30 @@ export class FormSolicitudComponent implements OnInit {
   }
 
   public cargaTiposSolicitudInicial() {
-    if (this.modalidad) {
-      this.tipoSolicitudId = 2;
-      const payload = `query=TipoSolicitud.Id:${this.tipoSolicitudId},Modalidad.Id:${this.modalidad}&limit=1`;
+    if (this.modalidadId) {
+      this.tipoSolicitudSeleccionada = <ModalidadTipoSolicitud>{ TipoSolicitud: <TipoSolicitud>{ Id: 2 } };
+      const payload = `query=TipoSolicitud.Id:${this.tipoSolicitudSeleccionada.TipoSolicitud.Id},Modalidad.Id:${this.modalidadId}&limit=1`;
       this.request.get(environment.POLUX_SERVICE, `modalidad_tipo_solicitud?${payload}`)
         .subscribe((responseModalidadTipoSolicitud) => {
-          this.tiposSolicitud = responseModalidadTipoSolicitud;
+          if (responseModalidadTipoSolicitud.length) {
+            this.tipoSolicitudSeleccionada = responseModalidadTipoSolicitud[0];
+            this.cargarFormularioSolicitud();
+          } else {
+            // error no hay registrada el tipo solicitud para la modalidad
+          }
         })
     } else {
-      this.tipoSolicitudId = 0;
+      this.tipoSolicitudSeleccionada = new ModalidadTipoSolicitud();
       this.tiposSolicitud = [];
     }
   }
 
   public validarFormularioSolicitud() {
-    //
-
     this.detallesConDocumento = [];
 
     this.detalles.forEach((detalle) => {
       if (detalle.Detalle.TipoDetalle.Nombre === 'Numerico') {
-        detalle.respuesta = detalle.respuestaNumerica + "";
+        detalle.respuesta = detalle.respuestaNumerica + '';
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Label') {
         detalle.respuesta = detalle.opciones[0].bd;
@@ -844,24 +786,21 @@ export class FormSolicitudComponent implements OnInit {
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Directiva') {
         if (detalle.Detalle.Descripcion == 'solicitar-asignaturas') {
-          detalle.respuesta = "JSON";
+          detalle.respuesta = 'JSON';
           this.estudiante.asignaturas_elegidas.forEach((asignatura: any) => {
             asignatura.$$hashKey = undefined;
-            detalle.respuesta = detalle.respuesta + "-" + JSON.stringify(asignatura);
+            detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(asignatura);
           });
-          //detalle.respuesta = detalle.respuesta.substring(1);
         }
         if (detalle.Detalle.Descripcion == 'asignar-estudiantes') {
-          detalle.respuesta = (!this.estudiantes.length) ? this.codigo : this.codigo + "," + this.estudiantes.toString();
+          detalle.respuesta = (!this.estudiantes.length) ? this.codigo : this.codigo + ',' + this.estudiantes.toString();
         }
         if (detalle.Detalle.Descripcion == 'asignar-area') {
-          detalle.respuesta = "JSON";
+          detalle.respuesta = 'JSON';
           this.estudiante.areas_elegidas.forEach((area: any) => {
             area.$$hashKey = undefined;
-            detalle.respuesta = detalle.respuesta + "-" + JSON.stringify(area);
-            //detalle.respuesta = detalle.respuesta +"," + (area.Id+"-"+area.Nombre);
+            detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(area);
           });
-          //detalle.respuesta = detalle.respuesta.substring(1);
         }
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Checkbox' || detalle.Detalle.TipoDetalle.Nombre === 'Radio') {
@@ -870,9 +809,9 @@ export class FormSolicitudComponent implements OnInit {
           detalle.bool = false;
         }
         if (detalle.bool) {
-          detalle.respuesta = "SI";
+          detalle.respuesta = 'SI';
         } else {
-          detalle.respuesta = "NO";
+          detalle.respuesta = 'NO';
         }
 
         //detalle.respuesta = detalle.bool.toString();
@@ -881,19 +820,19 @@ export class FormSolicitudComponent implements OnInit {
     //Realizar validaciones
     this.erroresFormulario = false;
     this.detalles.forEach((detalle) => {
-      if (typeof (detalle.respuesta) !== "string") {
+      if (typeof (detalle.respuesta) !== 'string') {
         // swal(
         //   'Validación del formulario',
-        //   "Diligencie correctamente el formulario por favor.",
+        //   'Diligencie correctamente el formulario por favor.',
         //   'warning'
         // );
         //
         this.erroresFormulario = true;
       }
-      if (detalle.respuesta === "" && detalle.Detalle.TipoDetalle.Nombre !== "Directiva" && detalle.Detalle.TipoDetalle.Nombre !== "Selector") {
+      if (detalle.respuesta === '' && detalle.Detalle.TipoDetalle.Nombre !== 'Directiva' && detalle.Detalle.TipoDetalle.Nombre !== 'Selector') {
         // swal(
         //   'Validación del formulario',
-        //   "Debe completar todos los campos del formulario.",
+        //   'Debe completar todos los campos del formulario.',
         //   'warning'
         // );
         //
@@ -902,7 +841,7 @@ export class FormSolicitudComponent implements OnInit {
       if (!this.estudiante.areas_elegidas.length && detalle.Detalle.Descripcion == 'asignar-area') {
         // swal(
         //   'Validación del formulario',
-        //   "Debe ingresar al menos un área de conocimiento.",
+        //   'Debe ingresar al menos un área de conocimiento.',
         //   'warning'
         // );
         //
@@ -911,12 +850,12 @@ export class FormSolicitudComponent implements OnInit {
       if (detalle.Detalle.Descripcion == 'solicitar-asignaturas' && !this.estudiante.minimoCreditos) {
         // swal(
         //   'Validación del formulario',
-        //   "Debe cumplir con el minimo de creditos.",
+        //   'Debe cumplir con el minimo de creditos.',
         //   'warning'
         // );
         this.erroresFormulario = true;
       }
-      if (detalle.Detalle.TipoDetalle.Nombre === "Selector" || detalle.Detalle.TipoDetalle.Nombre === "Lista") {
+      if (detalle.Detalle.TipoDetalle.Nombre === 'Selector' || detalle.Detalle.TipoDetalle.Nombre === 'Lista') {
         var contiene = false;
         //
         detalle.opciones.forEach((opcion: any) => {
@@ -925,14 +864,14 @@ export class FormSolicitudComponent implements OnInit {
           }
         });
         //Si el detalle es de docente co-director se puede dejar vacio
-        if (detalle.Detalle.Id == 56 && (detalle.respuesta == "" || detalle.respuesta == "No solicita")) {
-          detalle.respuesta = "No solicita";
+        if (detalle.Detalle.Id == 56 && (detalle.respuesta == '' || detalle.respuesta == 'No solicita')) {
+          detalle.respuesta = 'No solicita';
           contiene = true;
         }
         if (!contiene) {
           // swal(
           //   'Validación del formulario',
-          //   "Error ingrese una opcion valida.",
+          //   'Error ingrese una opcion valida.',
           //   'warning'
           // );
           this.erroresFormulario = true;
@@ -942,26 +881,28 @@ export class FormSolicitudComponent implements OnInit {
         if (detalle.fileModel == null) {
           // swal(
           //   'Validación del formulario',
-          //   "Error ingrese una opcion valida. (Documento)",
+          //   'Error ingrese una opcion valida. (Documento)',
           //   'warning'
           // );
           this.erroresFormulario = true;
         }
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Checkbox') {
-        if (detalle.respuesta == "NO") {
+        if (detalle.respuesta == 'NO') {
           // swal(
           //   'Validación del formulario',
-          //   "Debe aceptar los terminos y condiciones de la modalidad.",
+          //   'Debe aceptar los terminos y condiciones de la modalidad.',
           //   'warning'
           // );
           this.erroresFormulario = true;
         }
       }
     });
+
     if (!this.erroresFormulario) {
-      //ctrl.cargarSolicitudes();
       this.cargarDocumentos();
+    } else {
+      // Error formu
     }
   }
 
@@ -971,22 +912,20 @@ export class FormSolicitudComponent implements OnInit {
       var fileTypeError = false;
       this.detallesConDocumento.forEach((detalle) => {
         var documento = detalle.fileModel;
-        var tam = parseInt(detalle.Detalle.Descripcion.split(";")[1] + "000");
-        if (documento.type !== "application/pdf" || documento.size > tam) {
+        var tam = parseInt(detalle.Detalle.Descripcion.split(';')[1] + '000');
+        if (documento.type !== 'application/pdf' || documento.size > tam) {
           fileTypeError = true;
         }
       });
 
       if (!fileTypeError) {
-        const archivos: any[] = []
-        this.gestorDocumental.uploadFiles
-
+        const archivos: any[] = [];
         this.detallesConDocumento.forEach(file => {
           const data = {
             IdTipoDocumento: 5,
             nombre: file.Detalle.Nombre,
             metadatos: {
-              NombreArchivo: file.Detalle.Nombre + ": " + this.codigo,
+              NombreArchivo: file.Detalle.Nombre + ': ' + this.codigo,
               Tipo: 'Archivo',
               Observaciones: 'Solicitud inicial',
             },
@@ -998,8 +937,8 @@ export class FormSolicitudComponent implements OnInit {
         this.gestorDocumental.uploadFiles(archivos)
           .subscribe(() => this.postSolicitud())
         // swal(
-        //   $translate.instant("ERROR.SUBIR_DOCUMENTO"),
-        //   $translate.instant("VERIFICAR_DOCUMENTO"),
+        //   $translate.instant('ERROR.SUBIR_DOCUMENTO'),
+        //   $translate.instant('VERIFICAR_DOCUMENTO'),
         //   'warning'
         // );
         // $scope.loadFormulario = false;
@@ -1018,14 +957,14 @@ export class FormSolicitudComponent implements OnInit {
     var data_solicitud = {};
     var data_detalles: any = [];
     var data_usuarios = [];
-    let data_respuesta: any = {};
+    let dataRespuesta: any = {};
     var fecha = new Date();
 
     if (this.trabajoGradoId) {
       data_solicitud = {
         Fecha: fecha,
         ModalidadTipoSolicitud: {
-          Id: this.tipoSolicitudId
+          Id: this.tipoSolicitudSeleccionada.Id
         },
         TrabajoGrado: {
           Id: this.trabajoGradoId
@@ -1033,32 +972,29 @@ export class FormSolicitudComponent implements OnInit {
         PeriodoAcademico: this.periodo
       };
     } else {
-      if (this.tipoSolicitudId === 2) {
-        this.tipoSolicitudId = 70;
+      if (this.tipoSolicitudSeleccionada.Id === 2) {
+        this.tipoSolicitudSeleccionada.Id = 70;
       }
-      /*if(ctrl.ModalidadTipoSolicitud === 13){
-        ctrl.ModalidadTipoSolicitud = 71;
-      }*/
-      if (this.tipoSolicitudId === 16) {
-        this.tipoSolicitudId = 72;
-      } else if (this.tipoSolicitudId === 20) {
-        this.tipoSolicitudId = 73;
-      } else if (this.tipoSolicitudId === 28) {
-        this.tipoSolicitudId = 74;
-      } else if (this.tipoSolicitudId === 38) {
-        this.tipoSolicitudId = 75;
-      } else if (this.tipoSolicitudId === 46) {
-        this.tipoSolicitudId = 76;
-      } else if (this.tipoSolicitudId === 55) {
-        this.tipoSolicitudId = 77;
-      } else if (this.tipoSolicitudId === 82) {
-        this.tipoSolicitudId = 83;
+      if (this.tipoSolicitudSeleccionada.Id === 16) {
+        this.tipoSolicitudSeleccionada.Id = 72;
+      } else if (this.tipoSolicitudSeleccionada.Id === 20) {
+        this.tipoSolicitudSeleccionada.Id = 73;
+      } else if (this.tipoSolicitudSeleccionada.Id === 28) {
+        this.tipoSolicitudSeleccionada.Id = 74;
+      } else if (this.tipoSolicitudSeleccionada.Id === 38) {
+        this.tipoSolicitudSeleccionada.Id = 75;
+      } else if (this.tipoSolicitudSeleccionada.Id === 46) {
+        this.tipoSolicitudSeleccionada.Id = 76;
+      } else if (this.tipoSolicitudSeleccionada.Id === 55) {
+        this.tipoSolicitudSeleccionada.Id = 77;
+      } else if (this.tipoSolicitudSeleccionada.Id === 82) {
+        this.tipoSolicitudSeleccionada.Id = 83;
       }
 
       data_solicitud = {
         Fecha: fecha,
         ModalidadTipoSolicitud: {
-          Id: this.tipoSolicitudId
+          Id: this.tipoSolicitudSeleccionada.Id
         },
         PeriodoAcademico: this.periodo
       };
@@ -1085,10 +1021,10 @@ export class FormSolicitudComponent implements OnInit {
         Id: 0
       }
     });
-    //estudiantes que ya pertenecian al tg
-    //si es diferente a una solicitud de cancelación
-    if (this.TipoSolicitud.TipoSolicitud !== undefined) {
-      if (this.TipoSolicitud.TipoSolicitud.Id !== 3) {
+    // estudiantes que ya pertenecian al tg
+    // si es diferente a una solicitud de cancelación
+    if (this.tipoSolicitudSeleccionada.TipoSolicitud !== undefined) {
+      if (this.tipoSolicitudSeleccionada.TipoSolicitud.Id !== 3) {
         this.estudiantesTg.forEach((estudiante) => {
           if (estudiante !== undefined) {
             data_usuarios.push({
@@ -1110,11 +1046,11 @@ export class FormSolicitudComponent implements OnInit {
         }
       });
     });
-    if (this.siModalidad && [3, 4, 5, 7, 8, 10, 12, 13, 15].includes(this.TipoSolicitud.TipoSolicitud.Id)) {
+    if (this.siModalidad && [3, 4, 5, 7, 8, 10, 12, 13, 15].includes(this.tipoSolicitudSeleccionada.TipoSolicitud.Id)) {
       //Respuesta de la solicitud
-      data_respuesta = {
+      dataRespuesta = {
         Fecha: fecha,
-        Justificacion: "Su solicitud esta pendiente a la revision del docente",
+        Justificacion: 'Su solicitud esta pendiente a la revision del docente',
         EnteResponsable: 0,
         Usuario: 0,
         EstadoSolicitud: {
@@ -1125,16 +1061,16 @@ export class FormSolicitudComponent implements OnInit {
         },
         Activo: true
       }
-      if (this.Trabajo.TrabajoGrado.Modalidad.CodigoAbreviacion != "EAPOS") {
-        data_respuesta.EnteResponsable = this.Trabajo.directorInterno.Usuario
+      if (this.Trabajo.TrabajoGrado.Modalidad.CodigoAbreviacion != 'EAPOS') {
+        dataRespuesta.EnteResponsable = this.Trabajo.directorInterno.Usuario
       } else {
-        data_respuesta.EstadoSolicitud.Id = 1
+        dataRespuesta.EstadoSolicitud.Id = 1
       }
     } else {
-      //Respuesta de la solicitud
-      data_respuesta = {
+      // Respuesta de la solicitud
+      dataRespuesta = {
         Fecha: fecha,
-        Justificacion: "Su solicitud fue radicada",
+        Justificacion: 'Su solicitud fue radicada',
         EnteResponsable: parseInt(this.docDocenteDir),
         Usuario: 0,
         EstadoSolicitud: {
@@ -1147,26 +1083,24 @@ export class FormSolicitudComponent implements OnInit {
       }
     }
 
-
-
-    //se crea objeto con las solicitudes
+    // Se crea objeto con las solicitudes
     const solicitud = {
       Solicitud: data_solicitud,
-      Respuesta: data_respuesta,
+      Respuesta: dataRespuesta,
       DetallesSolicitud: data_detalles,
       UsuariosSolicitud: data_usuarios
     }
     this.request.post(environment.POLUX_SERVICE, 'tr_solicitud', solicitud)
       .subscribe((response) => {
-        if (response[0] === "Success") {
+        if (response[0] === 'Success') {
           // swal(
-          //   $translate.instant("FORMULARIO_SOLICITUD"),
-          //   $translate.instant("SOLICITUD_REGISTRADA"),
+          //   $translate.instant('FORMULARIO_SOLICITUD'),
+          //   $translate.instant('SOLICITUD_REGISTRADA'),
           //   'success'
           // );
         } else {
           // swal(
-          //   $translate.instant("FORMULARIO_SOLICITUD"),
+          //   $translate.instant('FORMULARIO_SOLICITUD'),
           //   $translate.instant(response.data[1]),
           //   'warning'
           // );
@@ -1176,14 +1110,15 @@ export class FormSolicitudComponent implements OnInit {
   }
 
   public cargarFormularioSolicitud() {
-    const parametrosDetalles = `query=ModalidadTipoSolicitud.TipoSolicitud.Id:${this.tipoSolicitudId},` +
-      `ModalidadTipoSolicitud.Modalidad.Id:${this.modalidad}&limit=0&sortby=NumeroOrden&order=asc`;
+    const parametrosDetalles = `query=ModalidadTipoSolicitud.Id:${this.tipoSolicitudSeleccionada.Id}` +
+      `&limit=0&sortby=NumeroOrden&order=asc`;
+    this.detalles = [];
 
     this.request.get(environment.POLUX_SERVICE, `detalle_tipo_solicitud?${parametrosDetalles}`)
       .subscribe(async (responseDetalles) => {
         if (responseDetalles.length) {
-          this.detalles = responseDetalles.filter((detalle: any) => (detalle.Detalle.Id !== 69 && detalle.Detalle.Activo));
-          //Se cargan opciones de los detalles
+          this.detalles = responseDetalles.filter((detalle: DetalleTipoSolicitud) => (detalle.Detalle.Id !== 69 && detalle.Detalle.Activo));
+          // Se cargan opciones de los detalles
           const promises: any[] = []
           this.detalles.forEach((detalle) => {
             //Se internacionalizan variables y se crean labels de los detalles
@@ -1198,84 +1133,84 @@ export class FormSolicitudComponent implements OnInit {
             //Se evalua si el detalle necesita cargar datos
             if (!detalle.Detalle.Descripcion.includes('no_service') && detalle.Detalle.TipoDetalle.Id !== 8) {
               //Se separa el strig
-              var parametrosServicio = detalle.Detalle.Descripcion.split(";");
-              var sql = "";
+              var parametrosServicio = detalle.Detalle.Descripcion.split(';');
+              var sql = '';
               var parametrosConsulta: any[] = [];
               //servicio de academiaca
-              if (parametrosServicio[0] === "polux") {
+              if (parametrosServicio[0] === 'polux') {
                 promises.push(this.getOpcionesPolux(detalle, parametrosServicio, parametrosConsulta, sql));
               }
-              if (parametrosServicio[0] === "academica") {
+              if (parametrosServicio[0] === 'academica') {
                 promises.push(this.getOpcionesAcademica(detalle, parametrosServicio));
               }
-              if (parametrosServicio[0] === "cidc") {
-                // if (parametrosServicio[1] === "estructura_investigacion") {
+              if (parametrosServicio[0] === 'cidc') {
+                // if (parametrosServicio[1] === 'estructura_investigacion') {
                 //   detalle.opciones = cidcRequest.obtenerEntidades();
                 // }
-                // if (parametrosServicio[1] === "docentes") {
+                // if (parametrosServicio[1] === 'docentes') {
                 //   detalle.opciones = cidcRequest.obtenerDoncentes();
                 // }
               }
-              if (parametrosServicio[0] === "estatico") {
-                parametrosConsulta = parametrosServicio[2].split(",");
+              if (parametrosServicio[0] === 'estatico') {
+                parametrosConsulta = parametrosServicio[2].split(',');
                 parametrosConsulta.forEach((opcion) => {
                   detalle.opciones.push({
-                    "NOMBRE": opcion,
-                    "bd": opcion
+                    'NOMBRE': opcion,
+                    'bd': opcion
                   });
                 });
               }
-              if (parametrosServicio[0] === "mensaje") {
+              if (parametrosServicio[0] === 'mensaje') {
                 detalle.opciones.push({
-                  // "NOMBRE": $translate.instant(parametrosServicio[1]),
-                  // "bd": $translate.instant(parametrosServicio[1])
+                  // 'NOMBRE': $translate.instant(parametrosServicio[1]),
+                  // 'bd': $translate.instant(parametrosServicio[1])
                 });
               }
 
-              if (parametrosServicio[0] === "categorias-revista") {
+              if (parametrosServicio[0] === 'categorias-revista') {
                 const payload = 'query=CodigoAbreviacion.in:A1_PLX|A2_PLX|B_PLX|C_PLX';
                 this.request.get(environment.PARAMETROS_SERVICE, `parametro?${payload}`)
                   .subscribe((parametros) => {
                     parametros.forEach((parametro: any) => {
                       detalle.opciones.push({
-                        "NOMBRE": parametro.Nombre,
-                        "bd": parametro.Id
+                        'NOMBRE': parametro.Nombre,
+                        'bd': parametro.Id
                       });
                     });
                   });
               }
             }
             // FILTRO SEGÚN MODALIDAD PARA EL CAMPO DE ACEPTACIÓN DE TERMINOS
-            if (detalle.Detalle.CodigoAbreviacion == "ACTERM") {
+            if (detalle.Detalle.CodigoAbreviacion == 'ACTERM') {
               // PARA MODALIDAD DE MONOGRAFIA
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "MONO") {
-                // detalle.label = $translate.instant("TERMINOS.MONOGRAFIA")
-                detalle.label = "TERMINOS.MONOGRAFIA"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'MONO') {
+                // detalle.label = $translate.instant('TERMINOS.MONOGRAFIA')
+                detalle.label = 'TERMINOS.MONOGRAFIA'
               }
               // PARA MODALIDAD DE MONOGRAFIA
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PAS" || detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PASIN") {
-                // detalle.label = $translate.instant("TERMINOS.PASANTIA")
-                detalle.label = "TERMINOS.PASANTIA"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PAS' || detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PASIN') {
+                // detalle.label = $translate.instant('TERMINOS.PASANTIA')
+                detalle.label = 'TERMINOS.PASANTIA'
               }
               // PARA MODALIDAD DE EMPRENDIMIENTO
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PEMP") {
-                // detalle.label = $translate.instant("TERMINOS.EMPRENDIMIENTO")
-                detalle.label = "TERMINOS.EMPRENDIMIENTO"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PEMP') {
+                // detalle.label = $translate.instant('TERMINOS.EMPRENDIMIENTO')
+                detalle.label = 'TERMINOS.EMPRENDIMIENTO'
               }
               // PARA MODALIDAD DE MATERIAS DE POSGRADO
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "EAPOS") {
-                // detalle.label = $translate.instant("TERMINOS.POSGRADO")
-                detalle.label = "TERMINOS.POSGRADO"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'EAPOS') {
+                // detalle.label = $translate.instant('TERMINOS.POSGRADO')
+                detalle.label = 'TERMINOS.POSGRADO'
               }
               // PARA MODALIDAD DE MATERIAS DE INVESTIGACION E INNOVACION
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "INV") {
-                // detalle.label = $translate.instant("TERMINOS.INVESTIGACION")
-                detalle.label = "TERMINOS.INVESTIGACION"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'INV') {
+                // detalle.label = $translate.instant('TERMINOS.INVESTIGACION')
+                detalle.label = 'TERMINOS.INVESTIGACION'
               }
               // PARA MODALIDAD DE MATERIAS DE ARTICULO ACADEMICO
-              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PACAD") {
-                // detalle.label = $translate.instant("TERMINOS.ARTICULO")
-                detalle.label = "TERMINOS.ARTICULO"
+              if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PACAD') {
+                // detalle.label = $translate.instant('TERMINOS.ARTICULO')
+                detalle.label = 'TERMINOS.ARTICULO'
               }
             }
           });
@@ -1290,7 +1225,7 @@ export class FormSolicitudComponent implements OnInit {
           //   })
           // });
         } else {
-          // ctrl.mensajeError = $translate.instant("ERROR.SIN_DETALLE_SOLICITUD");
+          // ctrl.mensajeError = $translate.instant('ERROR.SIN_DETALLE_SOLICITUD');
           // ctrl.errorParametros = true;
           // $scope.loadDetalles = false;
           // ctrl.detalles = [];
@@ -1299,184 +1234,170 @@ export class FormSolicitudComponent implements OnInit {
   }
 
   private cargarDetalles(inicial: boolean) {
-    if (this.Docente == 1 && this.Docente_trabajos == false) {
-      this.Docente_trabajos = true;
-      // this.tipoSolicitud_Docente = tipoSolicitudSeleccionada;
-    } else {
-      this.siPuede = false;
-      // this.detallesCargados = false;
-      // this.estudiantes = [];
-      // this.TipoSolicitud = tipoSolicitudSeleccionada;
-      // var tipoSolicitud = tipoSolicitudSeleccionada.Id;
-      // ctrl.ModalidadTipoSolicitud = tipoSolicitud;
+    this.siPuede = false;
+    // this.detallesCargados = false;
+    // this.estudiantes = [];
 
-      // if (tipoSolicitudSeleccionada != 2 && tipoSolicitudSeleccionada.TipoSolicitud.Id == 3) {
-      //   // SE LLAMA A LA FUNCION PARA MIRAR SI TIENE UNA SOLICITUD
-      //   ctrl.getCancelacionModalidad().then(function (cancelado) {
-      //     ctrl.Cancelacion = cancelado;
-      //     ctrl.mensajeCancelacion = $translate.instant("ERROR.CANCELACIONES");
-      //   });
-      // } else {
-      //   ctrl.Cancelacion = false;
-      // }
+    // if (tipoSolicitudSeleccionada != 2 && tipoSolicitudSeleccionada.TipoSolicitud.Id == 3) {
+    //   // SE LLAMA A LA FUNCION PARA MIRAR SI TIENE UNA SOLICITUD
+    //   ctrl.getCancelacionModalidad().then(function (cancelado) {
+    //     ctrl.Cancelacion = cancelado;
+    //     ctrl.mensajeCancelacion = $translate.instant('ERROR.CANCELACIONES');
+    //   });
+    // } else {
+    //   ctrl.Cancelacion = false;
+    // }
 
-      //SE LLAMA LA FUNCIÓN POR CADA UNA DE LAS NOVEDADES
-      this.getNotaTrabajoGrado()
-        .then((resultado) => {
-          this.Nota = resultado;
-          // this.mensajeCalificado = $translate.instant("ERROR.CALIFICADO");
-        });
+    //SE LLAMA LA FUNCIÓN POR CADA UNA DE LAS NOVEDADES
+    this.getNotaTrabajoGrado()
+      .then((resultado) => {
+        this.Nota = resultado;
+        // this.mensajeCalificado = $translate.instant('ERROR.CALIFICADO');
+      });
 
-      this.verificarRequisitos()
-        .then(() => {
-          // this.soliciudConDetalles = true;
-          this.detalles = [];
-          var tipo_solicitud = 2;
-          if (this.Docente == 1) {
-            tipo_solicitud = 6;
-          }
-          var promises: any[] = []
-          let parametrosDetalles = '';
-          if (this.modalidad === 0) {
-            parametrosDetalles = `query=ModalidadTipoSolicitud:${tipo_solicitud}&limit=0&sortby=NumeroOrden&order=asc`;
-          } else {
-            parametrosDetalles = `query=Activo:true,ModalidadTipoSolicitud.TipoSolicitud.Id:${tipo_solicitud}` +
-              `,ModalidadTipoSolicitud.Modalidad.Id:${this.modalidad}&limit=0&sortby=NumeroOrden&order=asc`;
-            promises.push(this.getModalidadTipoSolicitud());
-          }
+    this.verificarRequisitos()
+      .then(() => {
+        // this.soliciudConDetalles = true;
+        this.detalles = [];
+        var tipo_solicitud = 2;
+        var promises: any[] = []
+        let parametrosDetalles = '';
+        if (this.modalidadId === 0) {
+          parametrosDetalles = `query=ModalidadTipoSolicitud:${tipo_solicitud}&limit=0&sortby=NumeroOrden&order=asc`;
+        } else {
+          parametrosDetalles = `query=Activo:true,ModalidadTipoSolicitud.TipoSolicitud.Id:${tipo_solicitud}` +
+            `,ModalidadTipoSolicitud.Modalidad.Id:${this.modalidadId}&limit=0&sortby=NumeroOrden&order=asc`;
+        }
 
-          this.request.get(environment.POLUX_SERVICE, `detalle_tipo_solicitud?${parametrosDetalles}`)
-            .subscribe(async (responseDetalles) => {
-              if (responseDetalles.length) {
-                this.detalles = responseDetalles.filter((detalle: any) => (detalle.Detalle.Id !== 69 && detalle.Detalle.Activo));
-                //Se cargan opciones de los detalles
-                this.detalles.forEach((detalle) => {
-                  //Se internacionalizan variables y se crean labels de los detalles
-                  // detalle.label = $translate.instant(detalle.Detalle.Enunciado);
-                  detalle.label = detalle.Detalle.Enunciado;
-                  detalle.respuesta = '';
-                  detalle.fileModel = null;
-                  detalle.opciones = [];
-                  if (detalle.Detalle.Enunciado.includes('DOCENTE_AVALA_PROPUESTA') || detalle.Detalle.Enunciado.includes('SELECCIONE_DOCENTE_DESIGNADO_INVESTIGACION')) {
-                    this.posDocente = detalle.Id;
+        this.request.get(environment.POLUX_SERVICE, `detalle_tipo_solicitud?${parametrosDetalles}`)
+          .subscribe(async (responseDetalles) => {
+            if (responseDetalles.length) {
+              this.detalles = responseDetalles.filter((detalle: any) => (detalle.Detalle.Id !== 69 && detalle.Detalle.Activo));
+              //Se cargan opciones de los detalles
+              this.detalles.forEach((detalle) => {
+                //Se internacionalizan variables y se crean labels de los detalles
+                // detalle.label = $translate.instant(detalle.Detalle.Enunciado);
+                detalle.label = detalle.Detalle.Enunciado;
+                detalle.respuesta = '';
+                detalle.fileModel = null;
+                detalle.opciones = [];
+                if (detalle.Detalle.Enunciado.includes('DOCENTE_AVALA_PROPUESTA') || detalle.Detalle.Enunciado.includes('SELECCIONE_DOCENTE_DESIGNADO_INVESTIGACION')) {
+                  this.posDocente = detalle.Id;
+                }
+                //Se evalua si el detalle necesita cargar datos
+                if (!detalle.Detalle.Descripcion.includes('no_service') && detalle.Detalle.TipoDetalle.Id !== 8) {
+                  //Se separa el strig
+                  var parametrosServicio = detalle.Detalle.Descripcion.split(';');
+                  var sql = '';
+                  var parametrosConsulta: any[] = [];
+                  //servicio de academiaca
+                  if (parametrosServicio[0] === 'polux') {
+                    promises.push(this.getOpcionesPolux(detalle, parametrosServicio, parametrosConsulta, sql));
                   }
-                  //Se evalua si el detalle necesita cargar datos
-                  if (!detalle.Detalle.Descripcion.includes('no_service') && detalle.Detalle.TipoDetalle.Id !== 8) {
-                    //Se separa el strig
-                    var parametrosServicio = detalle.Detalle.Descripcion.split(";");
-                    var sql = "";
-                    var parametrosConsulta: any[] = [];
-                    //servicio de academiaca
-                    if (parametrosServicio[0] === "polux") {
-                      promises.push(this.getOpcionesPolux(detalle, parametrosServicio, parametrosConsulta, sql));
-                    }
-                    if (parametrosServicio[0] === "academica") {
-                      promises.push(this.getOpcionesAcademica(detalle, parametrosServicio));
-                    }
-                    if (parametrosServicio[0] === "cidc") {
-                      // if (parametrosServicio[1] === "estructura_investigacion") {
-                      //   detalle.opciones = cidcRequest.obtenerEntidades();
-                      // }
-                      // if (parametrosServicio[1] === "docentes") {
-                      //   detalle.opciones = cidcRequest.obtenerDoncentes();
-                      // }
-                    }
-                    if (parametrosServicio[0] === "estatico") {
-                      parametrosConsulta = parametrosServicio[2].split(",");
-                      parametrosConsulta.forEach((opcion) => {
-                        detalle.opciones.push({
-                          "NOMBRE": opcion,
-                          "bd": opcion
-                        });
-                      });
-                    }
-                    if (parametrosServicio[0] === "mensaje") {
+                  if (parametrosServicio[0] === 'academica') {
+                    promises.push(this.getOpcionesAcademica(detalle, parametrosServicio));
+                  }
+                  if (parametrosServicio[0] === 'cidc') {
+                    // if (parametrosServicio[1] === 'estructura_investigacion') {
+                    //   detalle.opciones = cidcRequest.obtenerEntidades();
+                    // }
+                    // if (parametrosServicio[1] === 'docentes') {
+                    //   detalle.opciones = cidcRequest.obtenerDoncentes();
+                    // }
+                  }
+                  if (parametrosServicio[0] === 'estatico') {
+                    parametrosConsulta = parametrosServicio[2].split(',');
+                    parametrosConsulta.forEach((opcion) => {
                       detalle.opciones.push({
-                        // "NOMBRE": $translate.instant(parametrosServicio[1]),
-                        // "bd": $translate.instant(parametrosServicio[1])
+                        'NOMBRE': opcion,
+                        'bd': opcion
                       });
-                    }
+                    });
+                  }
+                  if (parametrosServicio[0] === 'mensaje') {
+                    detalle.opciones.push({
+                      // 'NOMBRE': $translate.instant(parametrosServicio[1]),
+                      // 'bd': $translate.instant(parametrosServicio[1])
+                    });
+                  }
 
-                    if (parametrosServicio[0] === "categorias-revista") {
-                      const payload = 'query=CodigoAbreviacion.in:A1_PLX|A2_PLX|B_PLX|C_PLX';
-                      this.request.get(environment.PARAMETROS_SERVICE, `parametro?${payload}`)
-                        .subscribe((parametros) => {
-                          parametros.forEach((parametro: any) => {
-                            detalle.opciones.push({
-                              "NOMBRE": parametro.Nombre,
-                              "bd": parametro.Id
-                            });
+                  if (parametrosServicio[0] === 'categorias-revista') {
+                    const payload = 'query=CodigoAbreviacion.in:A1_PLX|A2_PLX|B_PLX|C_PLX';
+                    this.request.get(environment.PARAMETROS_SERVICE, `parametro?${payload}`)
+                      .subscribe((parametros) => {
+                        parametros.forEach((parametro: any) => {
+                          detalle.opciones.push({
+                            'NOMBRE': parametro.Nombre,
+                            'bd': parametro.Id
                           });
                         });
-                    }
+                      });
                   }
-                  // FILTRO SEGÚN MODALIDAD PARA EL CAMPO DE ACEPTACIÓN DE TERMINOS
-                  if (detalle.Detalle.CodigoAbreviacion == "ACTERM") {
-                    // PARA MODALIDAD DE MONOGRAFIA
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "MONO") {
-                      // detalle.label = $translate.instant("TERMINOS.MONOGRAFIA")
-                      detalle.label = 'TERMINOS.MONOGRAFIA'
-                    }
-                    // PARA MODALIDAD DE MONOGRAFIA
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PAS" || detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PASIN") {
-                      // detalle.label = $translate.instant("TERMINOS.PASANTIA")
-                      detalle.label = "TERMINOS.PASANTIA"
-                    }
-                    // PARA MODALIDAD DE EMPRENDIMIENTO
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PEMP") {
-                      // detalle.label = $translate.instant("TERMINOS.EMPRENDIMIENTO")
-                      detalle.label = "TERMINOS.EMPRENDIMIENTO"
-                    }
-                    // PARA MODALIDAD DE MATERIAS DE POSGRADO
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "EAPOS") {
-                      // detalle.label = $translate.instant("TERMINOS.POSGRADO")
-                      detalle.label = "TERMINOS.POSGRADO"
-                    }
-                    // PARA MODALIDAD DE MATERIAS DE INVESTIGACION E INNOVACION
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "INV") {
-                      // detalle.label = $translate.instant("TERMINOS.INVESTIGACION")
-                      detalle.label = "TERMINOS.INVESTIGACION"
-                    }
-                    // PARA MODALIDAD DE MATERIAS DE ARTICULO ACADEMICO
-                    if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == "PACAD") {
-                      // detalle.label = $translate.instant("TERMINOS.ARTICULO")
-                      detalle.label = "TERMINOS.ARTICULO"
-                    }
+                }
+                // FILTRO SEGÚN MODALIDAD PARA EL CAMPO DE ACEPTACIÓN DE TERMINOS
+                if (detalle.Detalle.CodigoAbreviacion == 'ACTERM') {
+                  // PARA MODALIDAD DE MONOGRAFIA
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'MONO') {
+                    // detalle.label = $translate.instant('TERMINOS.MONOGRAFIA')
+                    detalle.label = 'TERMINOS.MONOGRAFIA'
                   }
-                });
+                  // PARA MODALIDAD DE MONOGRAFIA
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PAS' || detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PASIN') {
+                    // detalle.label = $translate.instant('TERMINOS.PASANTIA')
+                    detalle.label = 'TERMINOS.PASANTIA'
+                  }
+                  // PARA MODALIDAD DE EMPRENDIMIENTO
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PEMP') {
+                    // detalle.label = $translate.instant('TERMINOS.EMPRENDIMIENTO')
+                    detalle.label = 'TERMINOS.EMPRENDIMIENTO'
+                  }
+                  // PARA MODALIDAD DE MATERIAS DE POSGRADO
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'EAPOS') {
+                    // detalle.label = $translate.instant('TERMINOS.POSGRADO')
+                    detalle.label = 'TERMINOS.POSGRADO'
+                  }
+                  // PARA MODALIDAD DE MATERIAS DE INVESTIGACION E INNOVACION
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'INV') {
+                    // detalle.label = $translate.instant('TERMINOS.INVESTIGACION')
+                    detalle.label = 'TERMINOS.INVESTIGACION'
+                  }
+                  // PARA MODALIDAD DE MATERIAS DE ARTICULO ACADEMICO
+                  if (detalle.ModalidadTipoSolicitud.Modalidad.CodigoAbreviacion == 'PACAD') {
+                    // detalle.label = $translate.instant('TERMINOS.ARTICULO')
+                    detalle.label = 'TERMINOS.ARTICULO'
+                  }
+                }
+              });
 
-                await Promise.all(promises);
-                //   $q.all(promises).then(function () {
-                //     $scope.loadDetalles = false;
-                //     ctrl.detallesCargados = true;
-                //     if (ctrl.detalles == null) {
-                //       ctrl.soliciudConDetalles = false;
-                //     }
-                //   })
-                // });
-              } else {
-                // ctrl.mensajeError = $translate.instant("ERROR.SIN_DETALLE_SOLICITUD");
-                // ctrl.errorParametros = true;
-                // $scope.loadDetalles = false;
-                // ctrl.detalles = [];
-              }
-            })
-          //}else {
-          //$scope.loadDetalles = false;
-          //ctrl.siPuede=true;
-          //ctrl.detalles = [];
-          //}
-        })
-    }
+              await Promise.all(promises);
+              //   $q.all(promises).then(function () {
+              //     $scope.loadDetalles = false;
+              //     ctrl.detallesCargados = true;
+              //     if (ctrl.detalles == null) {
+              //       ctrl.soliciudConDetalles = false;
+              //     }
+              //   })
+              // });
+            } else {
+              // ctrl.mensajeError = $translate.instant('ERROR.SIN_DETALLE_SOLICITUD');
+              // ctrl.errorParametros = true;
+              // $scope.loadDetalles = false;
+              // ctrl.detalles = [];
+            }
+          })
+        //}else {
+        //$scope.loadDetalles = false;
+        //ctrl.siPuede=true;
+        //ctrl.detalles = [];
+        //}
+      })
+
   };
 
-  displayOption(item: any) {
-    return item ? item.NOMBRE : '';
-  }
 
   private getOpcionesAcademica(detalle: any, parametrosServicio: string[]): Promise<void> {
     return new Promise((resolve) => {
-      if (parametrosServicio[1] === "docente") {
+      if (parametrosServicio[1] === 'docente') {
         this.request.get(environment.ACADEMICA_SERVICE, `docentes_tg`)
           .subscribe((response) => {
             if (response.docentesTg.docente) {
@@ -1510,7 +1431,7 @@ export class FormSolicitudComponent implements OnInit {
         .subscribe((asignatura) => {
           detalle.asignatura = asignatura.asignatura.datosAsignatura[0];
           detalle.opciones.push({
-            NOMBRE: asignatura.asignatura.datosAsignatura[0].nombre + ", creditos: " + asignatura.asignatura.datosAsignatura[0].creditos,
+            NOMBRE: asignatura.asignatura.datosAsignatura[0].nombre + ', creditos: ' + asignatura.asignatura.datosAsignatura[0].creditos,
             bd: espacio.EspaciosAcademicosElegibles.CodigoAsignatura + '-' + asignatura.asignatura.datosAsignatura[0].nombre,
           });
           resolve();
@@ -1562,6 +1483,10 @@ export class FormSolicitudComponent implements OnInit {
           resolve(evaluador);
         })
     })
+  }
+
+  public displayOption(item: any) {
+    return item ? item.NOMBRE : '';
   }
 
 }
