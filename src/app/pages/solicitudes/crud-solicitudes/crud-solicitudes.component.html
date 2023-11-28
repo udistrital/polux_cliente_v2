@@ -1,0 +1,28 @@
+<mat-card>
+    <mat-card-header>
+        Registrar solicitud
+    </mat-card-header>
+    <mat-card-content class="form-container" style="padding-top: 2rem;">
+        <mat-form-field appearance="outline" *ngIf="!siModalidad && !mostrarFormulario">
+            <mat-label>Modalidad</mat-label>
+            <mat-select [(ngModel)]="modalidadId" (selectionChange)="cargaTiposSolicitudInicial()">
+                <mat-option value=0>Seleccionar</mat-option>
+                <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.Id">
+                    {{modalidad.Nombre}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" *ngIf="siModalidad && !mostrarFormulario">
+            <mat-label>Tipo de Solicitud</mat-label>
+            <mat-select [(ngModel)]="tipoSolicitudSeleccionada" (selectionChange)="mostrarForm()">
+                <mat-option value=0>Seleccionar</mat-option>
+                <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo">
+                    {{tipo.TipoSolicitud.Nombre}}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <app-form-solicitud *ngIf="mostrarFormulario" [trabajoGradoId]="trabajoGradoId" (volver)="eventVolverForm()"
+            [tipoSolicitudSeleccionadaId]="tipoSolicitudSeleccionada.Id">
+        </app-form-solicitud>
+    </mat-card-content>
+</mat-card>

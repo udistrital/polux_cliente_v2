@@ -3,24 +3,6 @@
         Formulario de la solicitud
     </mat-card-header>
     <mat-card-content class="form-container" style="padding-top: 2rem;">
-        <mat-form-field appearance="outline" *ngIf="!siModalidad">
-            <mat-label>Modalidad</mat-label>
-            <mat-select [(ngModel)]="modalidadId" (selectionChange)="cargaTiposSolicitudInicial()">
-                <mat-option value=0>Seleccionar</mat-option>
-                <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.Id">
-                    {{modalidad.Nombre}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline" *ngIf="siModalidad">
-            <mat-label>Tipo de Solicitud</mat-label>
-            <mat-select [(ngModel)]="tipoSolicitudSeleccionada" (selectionChange)="cargarFormularioSolicitud()">
-                <mat-option value=0>Seleccionar</mat-option>
-                <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo">
-                    {{tipo.TipoSolicitud.Nombre}}
-                </mat-option>
-            </mat-select>
-        </mat-form-field>
         <div *ngFor="let detalle of detalles">
             <div *ngIf="detalle?.Detalle?.TipoDetalle?.Nombre === 'Label'">
                 <mat-label>{{detalle.label}}</mat-label>
@@ -126,7 +108,9 @@
         </div>
     </mat-card-content>
     <mat-card-actions>
-        <button type="button" [disabled]="!tipoSolicitudSeleccionada.Id" (click)="validarFormularioSolicitud()"
+        <button type="button" (click)="onVolver()"
+            mat-raised-button color="primary">VOLVER</button>
+        <button type="button" [disabled]="!tipoSolicitudSeleccionadaId" (click)="validarFormularioSolicitud()"
             mat-raised-button color="primary">ENVIAR_SOLICITUD</button>
     </mat-card-actions>
 </mat-card>
