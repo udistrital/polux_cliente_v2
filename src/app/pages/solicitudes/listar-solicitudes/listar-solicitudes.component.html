@@ -1,2 +1,16 @@
-<!-- <angular2-smart-table [settings]="settings" [source]="data"></angular2-smart-table> -->
-<app-crud-solicitudes></app-crud-solicitudes>
+<mat-card>
+    <mat-card-header>
+        Módulo de Solicitudes
+    </mat-card-header>
+    <mat-card-content *ngIf="!modoCrud">
+        <angular2-smart-table [settings]="settings" [source]="data" (edit)="onEdit($event)" (create)="onCreate()">
+        </angular2-smart-table>
+    </mat-card-content>
+
+    <app-crud-solicitudes *ngIf="modoCrud" [modo]="modoCrud"
+        [solicitudId]="solicitudSeleccionada"></app-crud-solicitudes>
+    <mat-card-actions *ngIf="modoCrud">
+        <button type="button" (click)="onVolver()" mat-raised-button color="primary">VOLVER</button>
+    </mat-card-actions>
+
+</mat-card>

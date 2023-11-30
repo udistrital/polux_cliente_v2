@@ -17,7 +17,8 @@ import { TipoSolicitud } from 'src/app/shared/models/tipoSolicitud.model';
 export class FormSolicitudComponent implements OnInit {
   @Input() tipoSolicitudSeleccionadaId: number = 0;
   @Input() trabajoGradoId: number = 0;
-  @Output() volver = new EventEmitter;
+  @Output() volver = new EventEmitter<void>();
+  @Output() dataForm = new EventEmitter<DetalleTipoSolicitudForm[]>();
 
   areasConocimiento: any[] = [];
   // * @property {Object} estudiante Datos del estudiante que esta realizando la solicitud.
@@ -29,7 +30,6 @@ export class FormSolicitudComponent implements OnInit {
   Trabajo: any = {};// Datos del trabajo de grado que cursa el estudiante que esta realizando la solicitud.
   // * @property {Boolean} solicitudConDetalles Indicador que maneja el contenido de los detalles dentro de una solicitud
   // * @property {Boolean} restringirModalidadesProfundizacion Indicador que maneja la restricción de modalidades para crear solicitud y solo habilita la modalidad de profundización
-  detallesConDocumento: any[] = []; // Colección que maneja los detalles con documento de una solicitud
   codigo = '';// Texto que carga el código del estudiante en sesión
   // * @property {Object} Trabajo Objeto que carga la información del estudiante con trabajo de grado registrado
   carreraElegida: any = {};// Objeto que carga la información sobre la carrera elegida por el estudiante
@@ -43,7 +43,6 @@ export class FormSolicitudComponent implements OnInit {
   // * @property {Object} blob Objeto que carga la información sobre el Blob del documento en carga
   // * @property {Object} content Objeto que define las propiedades de visualización para el documento en carga
   // * @property {Number} contador contador para no repetir valores en la modalidad de pasantia
-  url = 'url';
   estudiantesTg: any[] = []; // Estudiantes asociados al tranajo de grado.
 
   loadDocenteSolicitud = false;
@@ -63,7 +62,31 @@ export class FormSolicitudComponent implements OnInit {
       this.cargarFormularioSolicitud();
       this.obtenerAreas();
       this.getEspaciosInscritos(this.trabajoGradoId);
+      this.getVinculadosTg();
     }
+  }
+
+  private getVinculadosTg() {
+    if (!this.trabajoGradoId) {
+      return;
+    }
+
+    const payload = `query=TrabajoGrado:${this.trabajoGradoId},Activo:true&limit=0`;
+    this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${payload}`)
+      .subscribe((responseVinculacion) => {
+        this.Trabajo.evaluadores = [];
+        responseVinculacion.forEach((vinculado: any) => {
+          if (vinculado.RolTrabajoGrado.Id === 1) {
+            this.Trabajo.directorInterno = vinculado;
+          } else if (vinculado.RolTrabajoGrado.Id === 2) {
+            this.Trabajo.directorExterno = vinculado;
+          } else if (vinculado.RolTrabajoGrado.Id === 3) {
+            this.Trabajo.evaluadores.push(vinculado);
+          } else if (vinculado.RolTrabajoGrado.Id === 4) {
+            this.Trabajo.codirector = vinculado;
+          }
+        });
+      });
   }
 
   public onInputFileDocumento(event: any) {
@@ -339,8 +362,6 @@ export class FormSolicitudComponent implements OnInit {
   }
 
   public validarFormularioSolicitud() {
-    this.detallesConDocumento = [];
-
     this.detalles.forEach((detalle) => {
       if (detalle.Detalle.TipoDetalle.Nombre === 'Numerico') {
         detalle.respuesta = detalle.respuestaNumerica + '';
@@ -349,8 +370,7 @@ export class FormSolicitudComponent implements OnInit {
         detalle.respuesta = detalle.opciones[0].bd;
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Documento') {
-        detalle.respuesta = this.url;
-        this.detallesConDocumento.push(detalle);
+        detalle.respuesta = '';
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Directiva') {
         if (detalle.Detalle.Descripcion == 'solicitar-asignaturas') {
@@ -424,18 +444,14 @@ export class FormSolicitudComponent implements OnInit {
         this.erroresFormulario = true;
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Selector' || detalle.Detalle.TipoDetalle.Nombre === 'Lista') {
-        var contiene = false;
-        //
-        detalle.opciones.forEach((opcion: any) => {
-          if (opcion.bd == detalle.respuesta) {
-            contiene = true;
-          }
-        });
-        //Si el detalle es de docente co-director se puede dejar vacio
+        let contiene = detalle.opciones.findIndex((opcion: any) => opcion.bd === detalle.respuesta) > -1;
+
+        // Si el detalle es de docente co-director se puede dejar vacio
         if (detalle.Detalle.Id == 56 && (detalle.respuesta == '' || detalle.respuesta == 'No solicita')) {
           detalle.respuesta = 'No solicita';
           contiene = true;
         }
+
         if (!contiene) {
           // swal(
           //   'Validación del formulario',
@@ -469,6 +485,7 @@ export class FormSolicitudComponent implements OnInit {
 
     if (!this.erroresFormulario) {
       // emit
+      this.dataForm.emit(this.detalles);
     } else {
       // Error form
     }
@@ -687,8 +704,8 @@ export class FormSolicitudComponent implements OnInit {
   }
 
   private getEspaciosInscritos(idTrabajoGrado: number) {
-    const payload = 'query=trabajo_grado:' + idTrabajoGrado + '&limit=0';
-    this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${payload}`)
+    const payload = 'query=TrabajoGrado:' + idTrabajoGrado + '&limit=0';
+    this.request.get(environment.POLUX_SERVICE, `espacio_academico_inscrito?${payload}`)
       .subscribe((responseEspacios) => {
         if (responseEspacios.length) {
           responseEspacios.forEach((espacio: any) => {

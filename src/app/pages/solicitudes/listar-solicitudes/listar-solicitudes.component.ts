@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { AddAction, DeleteAction, EditAction, Settings } from 'angular2-smart-table';
+import { AddAction, DeleteAction, EditAction, EditEvent, Settings } from 'angular2-smart-table';
 import { environment } from 'src/environments/environment';
 import { RequestManager } from 'src/app/core/manager/request.service';
 import { UserService } from '../../services/userService';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-listar-solicitudes',
@@ -11,32 +12,47 @@ import { UserService } from '../../services/userService';
 })
 export class ListarSolicitudesComponent implements OnInit {
   data: any[] = [];
+  modoCrud = '';
+  solicitudSeleccionada = 0;
 
   constructor(
     private request: RequestManager,
-    private userService: UserService
+    private userService: UserService,
+    private router: Router,
   ) { }
 
   ngOnInit(): void {
     this.getSolicitudes();
   }
 
+  public onVolver() {
+    this.modoCrud = '';
+    this.solicitudSeleccionada = 0;
+  }
+
+  public onEdit(event: EditEvent) {
+    this.modoCrud = 'update';
+    this.solicitudSeleccionada = event.data.Id;
+  }
+
+  public onCreate() {
+    this.router.navigateByUrl('/pages/solicitudes/crear_solicitud');
+  }
+
   private getSolicitudes(): void {
     if (this.userService.user?.user?.email) {
-      this.request.get(
-        environment.POLUX_MID_SERVICE,
-        `solicitudes?user=${this.userService.user.user.email}`
-      ).subscribe({
-        next: (solicitudes: any[]) => {
-          this.data = solicitudes;
-          solicitudes.forEach(s => {
-            s.FechaSolicitud = s.SolicitudTrabajoGrado.Fecha;
-            s.SolicitudId = s.SolicitudTrabajoGrado.Id;
-          });
-        }, error: () => {
-          console.log('fail?');
-        }
-      });
+      this.request.get(environment.POLUX_MID_SERVICE, `solicitudes?user=${this.userService.user.user.email}`)
+        .subscribe({
+          next: (solicitudes: any[]) => {
+            this.data = solicitudes;
+            solicitudes.forEach(s => {
+              s.FechaSolicitud = s.SolicitudTrabajoGrado.Fecha;
+              s.SolicitudId = s.SolicitudTrabajoGrado.Id;
+            });
+          }, error: () => {
+            console.error('fail');
+          }
+        });
     }
     return
   }

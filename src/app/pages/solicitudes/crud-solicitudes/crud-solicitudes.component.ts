@@ -7,6 +7,7 @@ import { TipoSolicitud } from 'src/app/shared/models/tipoSolicitud.model';
 import { environment } from 'src/environments/environment';
 import { GestorDocumentalService } from '../../services/gestorDocumentalService';
 import { DetalleTipoSolicitudForm } from 'src/app/shared/models/detalleTipoSolicitud.model';
+import { UserService } from '../../services/userService';
 
 @Component({
   selector: 'app-crud-solicitudes',
@@ -18,8 +19,9 @@ export class CrudSolicitudesComponent implements OnInit {
   @Input() solicitudId = 0;
 
   modalidades: Modalidad[] = [];
-  tiposSolicitud: ModalidadTipoSolicitud[] = []; // Solicitudes realizadas por el estudiante anteriormente
+  tiposSolicitud: ModalidadTipoSolicitud[] = [];
 
+  titulo = 'Registrar Solicitud' || 'Revisar Solicitud';
   tipoSolicitudSeleccionada: ModalidadTipoSolicitud = new ModalidadTipoSolicitud();
   modalidadId = 0;
   siModalidad = false;
@@ -48,11 +50,15 @@ export class CrudSolicitudesComponent implements OnInit {
 
   constructor(
     private request: RequestManager,
+    private userService: UserService,
     private gestorDocumental: GestorDocumentalService,
-  ) { }
+  ) {
+    this.codigo = this.userService.user.userService?.Codigo;
+  }
 
   ngOnInit(): void {
     if (this.modo === 'create' && this.solicitudId === 0) {
+      this.titulo = 'Registrar Solicitud';
       this.verificarSiPuedeSolicitar()
         .then(async puedeSolicitar => {
           if (puedeSolicitar) {
@@ -67,7 +73,7 @@ export class CrudSolicitudesComponent implements OnInit {
           // }
         })
     } else if (this.modo === 'update' && this.solicitudId > 0) {
-
+      this.titulo = 'Revisar Solicitud';
     }
 
   }
@@ -109,7 +115,7 @@ export class CrudSolicitudesComponent implements OnInit {
   }
 
   public cargaTiposSolicitudInicial() {
-    if (this.modalidadId) {
+    if (this.modalidadId > 0) {
       this.tipoSolicitudSeleccionada = <ModalidadTipoSolicitud>{ TipoSolicitud: <TipoSolicitud>{ Id: 2 } };
       const payload = `query=TipoSolicitud.Id:${this.tipoSolicitudSeleccionada.TipoSolicitud.Id},Modalidad.Id:${this.modalidadId}&limit=1`;
       this.request.get(environment.POLUX_SERVICE, `modalidad_tipo_solicitud?${payload}`)
@@ -483,19 +489,20 @@ export class CrudSolicitudesComponent implements OnInit {
       })
   }
 
-  private cargarDocumentos(detallesConDocumento: any[]) {
+  public postDocumentos(detalles: DetalleTipoSolicitudForm[]) {
+    const detallesConDocumento = detalles.filter(detalle => detalle.Detalle.TipoDetalle.Nombre === 'Documento');
     if (detallesConDocumento.length) {
-      // OK, the returned client is connected
-      var fileTypeError = false;
-      detallesConDocumento.forEach((detalle) => {
-        var documento = detalle.fileModel;
-        var tam = parseInt(detalle.Detalle.Descripcion.split(';')[1] + '000');
-        if (documento.type !== 'application/pdf' || documento.size > tam) {
-          fileTypeError = true;
+      let errorDocumento = false;
+      for (let detalleConDocumento of detallesConDocumento) {
+        const documento = detalleConDocumento.fileModel;
+        const size = parseInt(detalleConDocumento.Detalle.Descripcion.split(';')[1] + '000');
+        if (documento.type !== 'application/pdf' || documento.size > size) {
+          errorDocumento = true;
+          break;
         }
-      });
+      }
 
-      if (!fileTypeError) {
+      if (!errorDocumento) {
         const archivos: any[] = [];
         detallesConDocumento.forEach(file => {
           const data = {
@@ -506,25 +513,18 @@ export class CrudSolicitudesComponent implements OnInit {
               Tipo: 'Archivo',
               Observaciones: 'Solicitud inicial',
             },
-            descripcion: file.nombre,
+            descripcion: file.Detalle.Nombre,
           }
           archivos.push(data);
         })
 
         this.gestorDocumental.uploadFiles(archivos)
           .subscribe(() => this.postSolicitud([]))
-        // swal(
-        //   $translate.instant('ERROR.SUBIR_DOCUMENTO'),
-        //   $translate.instant('VERIFICAR_DOCUMENTO'),
-        //   'warning'
-        // );
-        // $scope.loadFormulario = false;
 
       } else {
+        // Alerta error archivo
       }
     } else {
-      //agregar validación de error
-      // $scope.loadFormulario = true;
       this.postSolicitud([]);
     }
   };
@@ -717,13 +717,13 @@ export class CrudSolicitudesComponent implements OnInit {
   }
 
   private getEspaciosInscritos(idTrabajoGrado: number) {
-    const payload = 'query=trabajo_grado:' + idTrabajoGrado + '&limit=0';
-    this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${payload}`)
+    const payload = 'query=TrabajoGrado:' + idTrabajoGrado + '&limit=0';
+    this.request.get(environment.POLUX_SERVICE, `espacio_academico_inscrito?${payload}`)
       .subscribe((responseEspacios) => {
         if (responseEspacios.length) {
           this.carreraElegida = responseEspacios[0].EspaciosAcademicosElegibles.CarreraElegible.Id;
         }
-      })
+      });
   }
 
 }

@@ -1,14 +1,17 @@
 <mat-card>
     <mat-card-header>
-        Registrar solicitud
+        {{ titulo }}
     </mat-card-header>
-    <mat-card-content class="form-container" style="padding-top: 2rem;">
+    <mat-card-header *ngIf="tipoSolicitudSeleccionada.Id">
+        {{ tipoSolicitudSeleccionada.TipoSolicitud.Nombre }}
+    </mat-card-header>
+    <mat-card-content class="form-container" style="padding-top: 2rem;" *ngIf="!solicitudId">
         <mat-form-field appearance="outline" *ngIf="!siModalidad && !mostrarFormulario">
             <mat-label>Modalidad</mat-label>
             <mat-select [(ngModel)]="modalidadId" (selectionChange)="cargaTiposSolicitudInicial()">
                 <mat-option value=0>Seleccionar</mat-option>
                 <mat-option *ngFor="let modalidad of modalidades" [value]="modalidad.Id">
-                    {{modalidad.Nombre}}
+                    {{ modalidad.Nombre }}
                 </mat-option>
             </mat-select>
         </mat-form-field>
@@ -17,12 +20,12 @@
             <mat-select [(ngModel)]="tipoSolicitudSeleccionada" (selectionChange)="mostrarForm()">
                 <mat-option value=0>Seleccionar</mat-option>
                 <mat-option *ngFor="let tipo of tiposSolicitud" [value]="tipo">
-                    {{tipo.TipoSolicitud.Nombre}}
+                    {{ tipo.TipoSolicitud.Nombre }}
                 </mat-option>
             </mat-select>
         </mat-form-field>
         <app-form-solicitud *ngIf="mostrarFormulario" [trabajoGradoId]="trabajoGradoId" (volver)="eventVolverForm()"
-            [tipoSolicitudSeleccionadaId]="tipoSolicitudSeleccionada.Id">
+            (dataForm)="postDocumentos($event)" [tipoSolicitudSeleccionadaId]="tipoSolicitudSeleccionada.Id">
         </app-form-solicitud>
     </mat-card-content>
 </mat-card>
