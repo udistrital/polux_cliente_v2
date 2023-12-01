@@ -1,0 +1,21 @@
+<mat-card>
+    <mat-card-header>
+        Revisar Trabajo de Grado
+    </mat-card-header>
+    <mat-card-content class="form-container" *ngIf="true">
+        <mat-form-field appearance="outline" *ngIf="true">
+            <mat-label>Trabajo de Grado</mat-label>
+            <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="ngOnInit">
+                <mat-option value=0>Seleccionar</mat-option>
+                <mat-option *ngFor="let trabajo of trabajosDirigidos" [value]="trabajo.TrabajoGrado.Id">
+                    {{ trabajo.TrabajoGrado.Titulo + ' (' + trabajo.TrabajoGrado.Modalidad.Nombre + ') -' +
+                    'Rol: ' + trabajo.RolTrabajoGrado.Nombre }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+    </mat-card-content>
+
+    <app-versiones-documento *ngIf="trabajoSeleccionadoId" [tiposDocumento]="[3, 4, 5]" [trabajoGradoId]="trabajoSeleccionadoId">
+    </app-versiones-documento>
+
+</mat-card>

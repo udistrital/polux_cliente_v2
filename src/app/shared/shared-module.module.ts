@@ -21,32 +21,35 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { NgxMatFileInputModule } from '@angular-material-components/file-input';
-import {MatAutocompleteModule} from '@angular/material/autocomplete';
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatTreeModule } from '@angular/material/tree';
+import {MatToolbarModule} from '@angular/material/toolbar';
 import { Angular2SmartTableModule } from 'angular2-smart-table';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 const materialModules = [
   MatAutocompleteModule,
-  MatDialogModule,
+  MatButtonModule,
   MatCardModule,
-  MatTabsModule,
-  MatListModule,
-  MatIconModule,
-  MatInputModule,
-  MatSelectModule,
   MatCheckboxModule,
   MatDatepickerModule,
-  MatNativeDateModule,
+  MatDialogModule,
+  MatExpansionModule,
   MatFormFieldModule,
   MatGridListModule,
-  MatExpansionModule,
-  MatButtonModule,
-  MatStepperModule,
-  MatRadioModule,
+  MatIconModule,
+  MatInputModule,
+  MatListModule,
+  MatNativeDateModule,
   MatProgressBarModule,
   MatProgressSpinnerModule,
+  MatRadioModule,
+  MatSelectModule,
   MatSlideToggleModule,
+  MatStepperModule,
+  MatTabsModule,
+  MatToolbarModule,
+  MatTreeModule,
 ];
 
 const angularForms = [
