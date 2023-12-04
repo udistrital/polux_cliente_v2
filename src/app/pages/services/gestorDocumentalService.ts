@@ -16,7 +16,24 @@ export class GestorDocumentalService {
     private rqManager: RequestManager,
   ) { }
 
-  private fileToBase64(file: any) {
+  getByEnlace(enlace: string) {
+    return this.rqManager.get(environment.GESTOR_DOCUMENTAL_SERVICE, `document/${enlace}`)
+  }
+
+  getUrlFile(base64: any, minetype: any) {
+    return new Promise((resolve, reject) => {
+      const url = `data:${minetype};base64,${base64}`;
+      fetch(url)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'File name', { type: minetype });
+          const urlF = URL.createObjectURL(file);
+          resolve(urlF);
+        });
+    });
+  }
+
+  public fileToBase64(file: any) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);

@@ -5,7 +5,7 @@
     <mat-card-content class="form-container" *ngIf="true">
         <mat-form-field appearance="outline" *ngIf="true">
             <mat-label>Trabajo de Grado</mat-label>
-            <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="ngOnInit">
+            <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="consultarDocumentoTrabajoGrado()">
                 <mat-option value=0>Seleccionar</mat-option>
                 <mat-option *ngFor="let trabajo of trabajosDirigidos" [value]="trabajo.TrabajoGrado.Id">
                     {{ trabajo.TrabajoGrado.Titulo + ' (' + trabajo.TrabajoGrado.Modalidad.Nombre + ') -' +
@@ -15,7 +15,18 @@
         </mat-form-field>
     </mat-card-content>
 
-    <app-versiones-documento *ngIf="trabajoSeleccionadoId" [tiposDocumento]="[3, 4, 5]" [trabajoGradoId]="trabajoSeleccionadoId">
+    <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="[3, 4, 5]" [trabajoGradoId]="trabajoSeleccionadoId">
     </app-versiones-documento>
+
+
+    <mat-card-content class="form-container" *ngIf="trabajoSeleccionadoId > 0">
+        <mat-toolbar>
+            <span>DOCUMENTOS</span>
+        </mat-toolbar>
+        <div style="display: flex; flex-direction: row;">
+            <iframe *ngIf="doc" width="100%" height="820px" [src]="doc"></iframe>
+            <app-revisar-documento></app-revisar-documento>
+        </div>
+    </mat-card-content>
 
 </mat-card>

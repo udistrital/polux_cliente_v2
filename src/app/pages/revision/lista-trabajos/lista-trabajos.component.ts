@@ -4,6 +4,9 @@ import { VinculacionTrabajoGrado } from 'src/app/shared/models/vinculacionTrabaj
 import { environment } from 'src/environments/environment';
 import { UserService } from '../../services/userService';
 import { TrabajoGrado } from 'src/app/shared/models/trabajoGrado.model';
+import { DocumentoTrabajoGrado } from 'src/app/shared/models/documentoTrabajoGrado.model';
+import { GestorDocumentalService } from '../../services/gestorDocumentalService';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-lista-trabajos',
@@ -14,10 +17,13 @@ export class ListaTrabajosComponent implements OnInit {
   trabajosDirigidos: VinculacionTrabajoGrado[] = [];
   documento = '';
   trabajoSeleccionadoId = 0;
+  doc: any;
 
   constructor(
     private request: RequestManager,
     private userService: UserService,
+    private gestorDocumental: GestorDocumentalService,
+    private sanitization: DomSanitizer,
   ) {
     this.documento = this.userService.user.userService?.documento;
   }
@@ -37,6 +43,38 @@ export class ListaTrabajosComponent implements OnInit {
     this.request.get(environment.POLUX_SERVICE, `vinculacion_trabajo_grado?${uri}`)
       .subscribe((respuestaVinculaciones: VinculacionTrabajoGrado[]) => {
         this.trabajosDirigidos = respuestaVinculaciones;
+      });
+  }
+
+  public consultarDocumentoTrabajoGrado() {
+    if (this.trabajoSeleccionadoId === 0) {
+      this.doc = '';
+      return;
+    }
+
+    const uri = `query=DocumentoEscrito.TipoDocumentoEscrito:4,TrabajoGrado.Id:${this.trabajoSeleccionadoId}&limit=0`;
+    this.request.get(environment.POLUX_SERVICE, `documento_trabajo_grado?${uri}`)
+      .subscribe((respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
+        if (respuestaDocumentoTrabajoGrado.length && respuestaDocumentoTrabajoGrado[0].Id) {
+          this.consultarRevisionesTrabajoGrado(respuestaDocumentoTrabajoGrado[0].Id);
+        }
+      });
+  }
+
+  private consultarRevisionesTrabajoGrado(documentoSeleccionadoId: number) {
+    const uri = `query=DocumentoTrabajoGrado.TrabajoGrado.Id:${documentoSeleccionadoId}&limit=0`;
+    this.request.get(environment.POLUX_SERVICE, `revision_trabajo_grado?${uri}`)
+      .subscribe((respuestaRevisionesTrabajoGrado) => {
+        if (respuestaRevisionesTrabajoGrado.length) {
+          this.gestorDocumental.getByEnlace(respuestaRevisionesTrabajoGrado[0].DocumentoTrabajoGrado.DocumentoEscrito.Enlace)
+            .subscribe(async (ss) => {
+              const url = await this.gestorDocumental.getUrlFile(ss.file, ss['file:content']['mime-type']);
+              if (url) {
+                this.doc = this.sanitization.bypassSecurityTrustResourceUrl(url.toString());
+              }
+
+            })
+        }
       });
   }
 

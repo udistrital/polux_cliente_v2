@@ -1,0 +1,16 @@
+<div *ngFor="let correccion of correcciones">
+    <mat-form-field>
+        <mat-label>ENUNCIADO</mat-label>
+        <input type="text" placeholder="" aria-label="Number" matInput [(ngModel)]="correccion.Observacion">
+    </mat-form-field>
+
+    <mat-form-field>
+        <mat-label>DESCRIPCION</mat-label>
+        <input type="text" placeholder="" aria-label="Number" matInput [(ngModel)]="correccion.Justificacion">
+    </mat-form-field>
+</div>
+
+<mat-card-actions *ngIf="true" style="display: flex;justify-content: space-between;">
+    <button type="button" style="padding-right: 2rem;" mat-raised-button color="primary">ELIMINAR</button>
+    <button type="button" mat-raised-button color="primary">GUARDAR</button>
+</mat-card-actions>
