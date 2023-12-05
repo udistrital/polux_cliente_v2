@@ -4,22 +4,25 @@ import { VerDocumentoComponent } from './ver-documento/ver-documento.component';
 import { VersionesDocumentoComponent } from './versiones-documento/versiones-documento.component';
 import { SharedModule } from 'src/app/shared/shared-module.module';
 import { RevisarDocumentoComponent } from './revisar-documento/revisar-documento.component';
+import { VerRevisionComponent } from './ver-revision/ver-revision.component';
 
 
 @NgModule({
   declarations: [
-    VerDocumentoComponent,
-    VersionesDocumentoComponent,
     RevisarDocumentoComponent,
+    VerDocumentoComponent,
+    VerRevisionComponent,
+    VersionesDocumentoComponent,
   ],
   imports: [
     CommonModule,
     SharedModule,
   ],
   exports: [
-    VerDocumentoComponent,
-    VersionesDocumentoComponent,
     RevisarDocumentoComponent,
+    VerDocumentoComponent,
+    VerRevisionComponent,
+    VersionesDocumentoComponent,
   ]
 })
 export class DocumentoModule { }

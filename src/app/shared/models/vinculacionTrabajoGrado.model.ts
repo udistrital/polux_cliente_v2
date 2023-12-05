@@ -1,5 +1,5 @@
-import { RolTrabajoGrado } from "./rolTrabajoGrado.model";
-import { TrabajoGrado } from "./trabajoGrado.model";
+import { Parametro } from "./parametro.model";
+import { TrabajoGrado, TrabajoGradoDetalle } from "./trabajoGrado.model";
 
 export class VinculacionTrabajoGrado {
 	Id!: number;
@@ -7,6 +7,11 @@ export class VinculacionTrabajoGrado {
 	Activo!: boolean;
 	FechaInicio!: Date;
 	FechaFin!: Date;
-	RolTrabajoGrado!: RolTrabajoGrado;
+	RolTrabajoGrado!: number | Parametro;
 	TrabajoGrado!: TrabajoGrado;
+}
+
+export class VinculacionTrabajoGradoDetalle extends VinculacionTrabajoGrado {
+	override RolTrabajoGrado!: Parametro;
+	override TrabajoGrado!: TrabajoGradoDetalle;
 }
