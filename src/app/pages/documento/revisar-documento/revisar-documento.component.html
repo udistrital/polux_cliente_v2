@@ -1,16 +1,61 @@
-<div *ngFor="let correccion of correcciones">
-    <mat-form-field>
-        <mat-label>ENUNCIADO</mat-label>
-        <input type="text" placeholder="" aria-label="Number" matInput [(ngModel)]="correccion.Observacion">
-    </mat-form-field>
+<mat-accordion>
+    <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'REVISION'}}: {{revision.NumeroRevision}}
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+        <p>
+            <cite>{{'FECHA_RECEPCION' }}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
+        </p>
 
-    <mat-form-field>
-        <mat-label>DESCRIPCION</mat-label>
-        <input type="text" placeholder="" aria-label="Number" matInput [(ngModel)]="correccion.Justificacion">
-    </mat-form-field>
-</div>
+        <!-- <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
+            <button type="button" (click)="descargarArchivo(correccion.Correccion.Observacion)" mat-raised-button
+                color="primary">{{'VER_ADJUNTO'}}</button>
+        </div> -->
+        <br>
+        <mat-expansion-panel [expanded]="true" *ngFor="let correccion of comentariosCorreccion; let i = index">
+            <mat-expansion-panel-header style="display: flex;">
+                <mat-panel-title>
+                    {{'CORRECCION'}}
+                </mat-panel-title>
+                <button mat-icon-button color="primary" (click)="eliminarCorreccion(i)">
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </mat-expansion-panel-header>
+            <mat-card>
+                <mat-form-field appearance="outline">
+                    <mat-label>{{'ENUNCIADO'}}</mat-label>
+                    <input type="text" matInput [(ngModel)]="correccion.Correccion.Observacion">
+                </mat-form-field>
 
-<mat-card-actions *ngIf="true" style="display: flex;justify-content: space-between;">
-    <button type="button" style="padding-right: 2rem;" mat-raised-button color="primary">ELIMINAR</button>
-    <button type="button" mat-raised-button color="primary">GUARDAR</button>
-</mat-card-actions>
+                <mat-form-field appearance="outline">
+                    <ngx-mat-file-input placeholder="{{'SELECCIONAR_ARCHIVO'}}"
+                        [ngModel]="correccion.Correccion.Observacion" [accept]="'.pdf'">
+                    </ngx-mat-file-input>
+                </mat-form-field>
+
+                <div class="container-flex-row" *ngFor="let comentario of correccion.Comentarios; let j = index">
+                    <mat-form-field appearance="outline" class="form-field">
+                        <mat-label>{{'COMENTARIO'}}</mat-label>
+                        <textarea matInput [(ngModel)]="comentario.Comentario"></textarea>
+                    </mat-form-field>
+                    <button mat-icon-button color="primary" (click)="eliminarComentario(i, j)">
+                        <mat-icon>delete</mat-icon>
+                    </button>
+                </div>
+                <mat-card-actions align="end">
+                    <button type="button" [disabled]="" (click)="agregarComentario(i)" mat-raised-button
+                        color="primary">NUEVO_COMENTARIO</button>
+                </mat-card-actions>
+
+            </mat-card>
+        </mat-expansion-panel>
+        <mat-card-actions>
+            <button type="button" (click)="agregarCorreccion()" mat-raised-button
+                color="primary">NUEVA_CORRECCION</button>
+            <button type="button" (click)="postRevision()" mat-raised-button color="primary">
+                REGISTRAR_REVISION</button>
+        </mat-card-actions>
+    </mat-expansion-panel>
+</mat-accordion>

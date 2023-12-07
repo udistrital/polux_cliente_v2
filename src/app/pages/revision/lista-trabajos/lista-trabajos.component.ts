@@ -63,7 +63,7 @@ export class ListaTrabajosComponent implements OnInit {
 
   private getModalidades(): Promise<void> {
     return new Promise(async (resolve, reject) => {
-      this.modalidades = await firstValueFrom(this.parametros.getEstadosRevisionTrabajoGrado());
+      this.modalidades = await firstValueFrom(this.parametros.getModalidadesTrabajoGrado());
       resolve();
     });
   }
@@ -93,7 +93,7 @@ export class ListaTrabajosComponent implements OnInit {
       .filter(rol => rolesValidos.includes(rol.CodigoAbreviacion))
       .map(rolValido => rolValido.Id);
 
-    const uri = "limit=0&TrabajoGrado.EstadoTrabajoGrado.in:" + idsEstados.join('|')
+    const uri = 'limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:' + idsEstados.join('|')
       + ',RolTrabajoGrado.in:' + idsRoles.join('|')
       + ',Activo:true,Usuario:' + this.documento;
 

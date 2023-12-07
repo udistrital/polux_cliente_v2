@@ -13,7 +13,7 @@ export class ParametrosService {
   ) { }
 
   public get(endpoint: string, uri: string) {
-    this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`)
+    return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`)
   }
 
   public getEstadosTrabajoGrado() {

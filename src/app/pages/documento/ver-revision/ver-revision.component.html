@@ -1,1 +1,38 @@
-<p>ver-revision works!</p>
+<mat-accordion>
+    <mat-expansion-panel *ngFor="let correccion of comentariosCorreccion">
+        <mat-expansion-panel-header>
+            <mat-panel-title>
+                {{'CORRECCION'}}
+            </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
+            <button type="button" (click)="descargarArchivo(correccion.Correccion.Observacion)" mat-raised-button
+                color="primary">{{'VER_ADJUNTO'}}</button>
+        </div>
+        <mat-expansion-panel *ngFor="let comentario of correccion.Comentarios">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    {{!correccion.Correccion.Documento ? correccion.Correccion.Observacion : ''}}
+                </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div>
+                <p><small>{{comentario.Comentario}}</small></p>
+                <h6> {{comentario.Autor}}
+                    <cite>{{comentario.Fecha | date:'dd-MMM-yyyy'}}</cite>
+                </h6>
+            </div>
+        </mat-expansion-panel>
+        <br>
+        <mat-card>
+            <mat-form-field appearance="outline">
+                <mat-label>{{'NUEVO_COMENTARIO'}}</mat-label>
+                <textarea matInput [(ngModel)]="correccion.NuevoComentario"></textarea>
+            </mat-form-field>
+            <mat-card-actions align="end">
+                <button type="button" [disabled]="!correccion.NuevoComentario.length"
+                    (click)="postComentario(correccion)" mat-raised-button color="primary">PUBLICAR</button>
+            </mat-card-actions>
+        </mat-card>
+    </mat-expansion-panel>
+</mat-accordion>
