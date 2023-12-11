@@ -16,28 +16,8 @@ export class ParametrosService {
     return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`)
   }
 
-  public getEstadosTrabajoGrado() {
-    const endpoint = 'parametro';
-    const uri = 'query=TipoParametroId__CodigoAbreviacion:EST_TRG&limit=0';
-    return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`);
-  }
-
-  public getRolesTrabajoGrado() {
-    const endpoint = 'parametro';
-    const uri = 'query=TipoParametroId__CodigoAbreviacion:ROL_TRG&limit=0';
-    return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`);
-  }
-
-  public getModalidadesTrabajoGrado() {
-    const endpoint = 'parametro';
-    const uri = 'query=TipoParametroId__CodigoAbreviacion:MOD_TRG&limit=0';
-    return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`);
-  }
-
-  public getEstadosRevisionTrabajoGrado() {
-    const endpoint = 'parametro';
-    const uri = 'query=TipoParametroId__CodigoAbreviacion:ESTREV_TRG&limit=0';
-    return this.request.get(environment.PARAMETROS_SERVICE, `${endpoint}?${uri}`);
+  public getAllParametroByTipo(tipo: string) {
+    return this.get('parametro', `limit=0&query=TipoParametroId__CodigoAbreviacion:${tipo}`);
   }
 
   public fillPropiedad(obj: any, key: string, parametros: Parametro[]) {

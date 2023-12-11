@@ -1,9 +1,9 @@
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { RequestManager } from 'src/app/core/manager/request.service';
 import { environment } from 'src/environments/environment';
-import { DocumentoTrabajoGrado } from 'src/app/shared/models/documentoTrabajoGrado.model';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { FlatTreeControl } from '@angular/cdk/tree';
+import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
 
 interface ExampleFlatNode {
   expandable: boolean;
@@ -17,7 +17,7 @@ interface ExampleFlatNode {
   styleUrls: ['./versiones-documento.component.scss']
 })
 export class VersionesDocumentoComponent implements OnInit, OnChanges {
-  @Input() tiposDocumento: number[] = [];
+  @Input() tiposDocumento: TipoDocumento[] = [];
   @Input() trabajoGradoId = 0;
 
   private _transformer = (node: any, level: number) => {
@@ -62,16 +62,14 @@ export class VersionesDocumentoComponent implements OnInit, OnChanges {
 
   private cargarDocumentos() {
     for (const tipoDocumento of this.tiposDocumento) {
-      const uri = `query=TrabajoGrado.Id:${this.trabajoGradoId},DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento}&limit=-1`;
+      const uri = `query=TrabajoGrado.Id:${this.trabajoGradoId},DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id}&limit=-1`;
       this.request.get(environment.POLUX_SERVICE, `documento_trabajo_grado?${uri}`)
         .subscribe((respuestaDocumentos: any[]) => {
           if (respuestaDocumentos.length) {
             const node: any = {};
-            if (tipoDocumento === 3) {
-              node.name = 'Anteproyecto';
-            } else if (tipoDocumento === 4) {
+            if (tipoDocumento.CodigoAbreviacion === 'DTR_PLX') {
               node.name = 'Trabajo de Grado';
-            } else if (tipoDocumento === 5) {
+            } else if (tipoDocumento.CodigoAbreviacion === 'DGRREV_PLX') {
               node.name = 'Trabajo de Grado para Revisión';
             }
 

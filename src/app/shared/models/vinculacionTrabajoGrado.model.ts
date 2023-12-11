@@ -11,6 +11,10 @@ export class VinculacionTrabajoGrado {
 	TrabajoGrado!: TrabajoGrado;
 }
 
+export class VinculacionTrabajoGradoNombre extends VinculacionTrabajoGrado {
+	Nombre: string = '';
+}
+
 export class VinculacionTrabajoGradoDetalle extends VinculacionTrabajoGrado {
 	override RolTrabajoGrado!: Parametro;
 	override TrabajoGrado!: TrabajoGradoDetalle;

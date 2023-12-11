@@ -92,7 +92,7 @@ export class RequestManager {
    * @param element data to send as JSON, With the id to UPDATE
    * @returns Observable<any>
    */
-  put(path: string, endpoint: string, element: any, id: number): Observable<any> {
+  put(path: string, endpoint: string, id: number, element: any): Observable<any> {
     return this.header$.pipe(
       mergeMap((header: any) => {
         header['observe'] = 'body';

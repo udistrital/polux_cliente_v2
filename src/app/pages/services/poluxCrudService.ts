@@ -15,6 +15,10 @@ export class PoluxCrudService {
     return this.request.get(environment.POLUX_SERVICE, `${endpoint}?${uri}`)
   }
 
+  public put(endpoint: string, id: number, element: any) {
+    return this.request.put(environment.POLUX_SERVICE, endpoint, id, element)
+  }
+
   public post(endpoint: string, element: any) {
     return this.request.post(environment.POLUX_SERVICE, `${endpoint}`, element);
   }

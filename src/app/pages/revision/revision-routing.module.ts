@@ -8,6 +8,13 @@ const routes: Routes = [
     path: 'tgs/revision_documento',
     component: ListaTrabajosComponent,
     canActivate: [canActivate],
+    data: { modo: 'DOCENTE' },
+  },
+  {
+    path: 'revision_documento',
+    component: ListaTrabajosComponent,
+    canActivate: [canActivate],
+    data: { modo: 'ESTUDIANTE' },
   },
 ];
 

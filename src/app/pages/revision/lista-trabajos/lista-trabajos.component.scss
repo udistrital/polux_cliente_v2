@@ -1,0 +1,17 @@
+.flex-container-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.form-field-container {
+    padding: 1rem;
+    flex: 1;
+}
+
+.two-buttons-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}

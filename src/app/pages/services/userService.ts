@@ -23,4 +23,12 @@ export class UserService {
     this.permisos = permisos;
   }
 
+  getCodigo(): string {
+    return this.user.userService?.Codigo ? this.user.userService?.Codigo : this.user.userService?.documento;
+  }
+
+  getDocumento(): string {
+    return this.user.userService?.documento;
+  }
+
 }

@@ -1,11 +1,15 @@
 <mat-card>
   <mat-card-header>
-    Revisar Trabajo de Grado
+    Revisión de Documentos
   </mat-card-header>
-  <mat-card-content class="form-container" *ngIf="true">
-    <mat-form-field appearance="outline" *ngIf="true">
+  <mat-card *ngIf="modo === 'DOCENTE'">
+    <mat-toolbar>
+      <span>Trabajos de grado asociados</span>
+    </mat-toolbar>
+    <mat-form-field appearance="outline">
       <mat-label>Trabajo de Grado</mat-label>
-      <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="consultarDocumentoTrabajoGrado()">
+      <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="consultarTrabajoGrado()"
+        placeholder="Seleccione un trabajo de grado">
         <mat-option value=0>Seleccionar</mat-option>
         <mat-option *ngFor="let trabajo of trabajosDirigidos" [value]="trabajo.TrabajoGrado.Id">
           {{ trabajo.TrabajoGrado.Titulo + ' (' + trabajo.TrabajoGrado.Modalidad.Nombre + ') -' +
@@ -13,43 +17,77 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-  </mat-card-content>
+  </mat-card>
 
-  <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="[3, 4, 5]"
+  <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="tiposDocumento"
     [trabajoGradoId]="trabajoSeleccionadoId">
   </app-versiones-documento>
 
-  <mat-card-content style="display: flex; flex-direction: row;"
+  <mat-card style="display: flex; flex-direction: row;"
     *ngIf="trabajoSeleccionadoId > 0 && revisionesTrabajoGrado.length">
     <div>
       <mat-toolbar>
-        <span>DOCUMENTO</span>
+        <span>Documento Revisión</span>
       </mat-toolbar>
       <iframe *ngIf="doc" width="100%" height="820px" [src]="doc"></iframe>
     </div>
 
-    <mat-accordion>
-      <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
-        <mat-expansion-panel-header>
-          <mat-panel-title>
-            {{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}}
-          </mat-panel-title>
-        </mat-expansion-panel-header>
-        <p>
-          <cite>{{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
-            {{'FECHA_RECEPCION'}}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
-        </p>
+    <div>
+      <mat-toolbar>
+        <span>Revisiones</span>
+      </mat-toolbar>
+      <mat-accordion>
+        <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              {{'REVISION'}} {{revision.NumeroRevision}} {{revision.EstadoRevisionTrabajoGrado.Nombre}}
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <p>
+            <cite>{{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
+              {{'FECHA_RECEPCION'}}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
+          </p>
 
-        <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
-             (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
-             revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
-        </app-revisar-documento>
-        <app-ver-revision [revision]="revision" *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX' &&
+          <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
+              (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
+              revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
+          </app-revisar-documento>
+          <app-ver-revision [revision]="revision" *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX' &&
             revision.VinculacionTrabajoGrado.Usuario.toString() !== documento">
-        </app-ver-revision>
-        <br>
-      </mat-expansion-panel>
-    </mat-accordion>
-  </mat-card-content>
+          </app-ver-revision>
+          <br>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </div>
+  </mat-card>
 
+  <mat-card *ngIf="modo === 'ESTUDIANTE'">
+    <mat-toolbar>
+      <span>Acciones</span>
+    </mat-toolbar>
+    <mat-card-content class="flex-container-row">
+      <mat-form-field appearance="outline" class="form-field-container">
+        <mat-label>Subir Nueva Versión</mat-label>
+        <ngx-mat-file-input placeholder="{{'SELECCIONAR_ARCHIVO'}}" [(ngModel)]="nuevoDocumento" [accept]="'.pdf'">
+        </ngx-mat-file-input>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="form-field-container">
+        <mat-label>Revisor</mat-label>
+        <mat-select [(ngModel)]="revisorId" (selectionChange)="consultarTrabajoGrado()"
+          placeholder="Seleccione un trabajo de grado">
+          <mat-option value=0>Seleccionar</mat-option>
+          <mat-option *ngFor="let revisor of vinculados" [value]="revisor.Id">
+            {{ revisor.Nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-actions class="two-buttons-container">
+      <button type="button" (click)="subirVersion()" [disabled]="!nuevoDocumento" mat-raised-button
+        color="primary">NUEVA_VERSIÓN</button>
+      <button type="button" (click)="solicitarRevision()" [disabled]="!(revisorId > 0)" mat-raised-button
+        color="primary">
+        SOLICITAR_REVISION</button>
+    </mat-card-actions>
+  </mat-card>
 </mat-card>

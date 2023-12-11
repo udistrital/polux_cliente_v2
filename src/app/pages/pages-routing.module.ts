@@ -46,6 +46,16 @@ const routes: Routes = [{
       canActivateChild: [canActivateChild],
     },
     {
+      path: 'docente',
+      loadChildren: () => import('./revision/revision.module').then(m => m.RevisionModule),
+      canActivateChild: [canActivateChild],
+    },
+    {
+      path: 'estudiante',
+      loadChildren: () => import('./revision/revision.module').then(m => m.RevisionModule),
+      canActivateChild: [canActivateChild],
+    },
+    {
       path: 'solicitudes',
       loadChildren: () => import('./solicitudes/solicitudes.module').then(m => m.SolicitudesModule),
       canActivateChild: [canActivateChild],
