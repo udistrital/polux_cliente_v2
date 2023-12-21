@@ -30,16 +30,7 @@ export class VerRevisionComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.cargarCorrecciones();
     this.cargarComentarios();
-  }
-
-  private cargarCorrecciones(): void {
-
-    this.polux.get('correccion', `query=RevisionTrabajoGrado.Id:${this.revision.Id}&sortby=Id&order=asc&limit=0`)
-      .subscribe((responseCorrecciones: Correccion[]) => {
-        this.correcciones = responseCorrecciones;
-      });
   }
 
   private cargarComentarios(): void {
@@ -83,7 +74,7 @@ export class VerRevisionComponent implements OnInit {
     }
 
     correccion.NuevoComentario = '';
-    this.polux.post("comentario", nuevoComentario)
+    this.polux.post('comentario', nuevoComentario)
       .subscribe((responseNuevoComentario: Comentario) => {
         if (responseNuevoComentario.Id > 0) {
           correccion.Comentarios.push(nuevoComentario);

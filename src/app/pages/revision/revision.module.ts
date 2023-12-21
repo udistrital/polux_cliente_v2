@@ -6,7 +6,6 @@ import { ListaTrabajosComponent } from './lista-trabajos/lista-trabajos.componen
 import { SharedModule } from 'src/app/shared/shared-module.module';
 import { DocumentoModule } from '../documento/documento.module';
 
-
 @NgModule({
   declarations: [
     ListaTrabajosComponent,

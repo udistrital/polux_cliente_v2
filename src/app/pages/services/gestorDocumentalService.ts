@@ -20,7 +20,7 @@ export class GestorDocumentalService {
     return this.rqManager.get(environment.GESTOR_DOCUMENTAL_SERVICE, `document/${enlace}`)
   }
 
-  getUrlFile(base64: any, minetype: any) {
+  getUrlFile(base64: any, minetype: any): Promise<string> {
     return new Promise((resolve, reject) => {
       const url = `data:${minetype};base64,${base64}`;
       fetch(url)

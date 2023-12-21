@@ -6,4 +6,10 @@
     color: #000;
 }
 
-// :host ::ng-deep angular2-smart-table-pager span {
+:host ::ng-deep angular2-st-tbody-custom angular2-st-tbody-edit-delete i {
+    color: #000;
+}
+
+:host ::ng-deep angular2-smart-action angular2-smart-action-add-add {
+    color: #fff;
+}

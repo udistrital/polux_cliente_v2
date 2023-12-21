@@ -39,7 +39,7 @@ export class ListaTrabajosComponent implements OnInit {
   trabajoSeleccionadoId = 0;
 
   doc: any;
-  nuevoDocumento: any;
+  nuevoDocumento: File = new File([], '');
   revisorId = 0;
 
   constructor(
@@ -61,15 +61,15 @@ export class ListaTrabajosComponent implements OnInit {
       if (data && data.modo) {
         this.modo = data.modo;
         if (this.modo === 'DOCENTE') {
-          this.getParametros();
+          this.getParametrosDocente();
         } else {
-          this.getParametros2();
+          this.getParametrosEstudiante();
         }
       }
     });
   }
 
-  private async getParametros() {
+  private async getParametrosDocente() {
     await Promise.all([
       this.getEstadosTrabajoGrado(),
       this.getRolesTrabajoGrado(),
@@ -159,6 +159,79 @@ export class ListaTrabajosComponent implements OnInit {
     this.consultarDocumentoTrabajoGrado();
   }
 
+  public subirVersion() {
+    const descripcion = 'Versión nueva del trabajo de grado';
+    const tipoDocumento = this.tiposDocumento.find(tipoDoc => tipoDoc.CodigoAbreviacion === 'DTR_PLX');
+    if (!tipoDocumento) {
+      return;
+    }
+
+    this.gestorDocumental.fileToBase64(this.nuevoDocumento)
+      .then((base64) => {
+        const fileBase64 = base64;
+        const data = [{
+          IdTipoDocumento: tipoDocumento.Id,
+          nombre: this.trabajoGrado.Titulo,
+          metadatos: {
+            NombreArchivo: this.trabajoGrado.Titulo + ': ' + this.codigoEstudiante,
+            Tipo: 'Archivo',
+            Observaciones: 'Nueva version trabajo ' + this.trabajoGrado.Titulo
+          },
+          descripcion: descripcion,
+          file: fileBase64,
+        }];
+
+        this.gestorDocumental.uploadFiles(data)
+          .subscribe((response) => {
+            const URL = response[0].data.res.Enlace
+            this.actualizarDocumentoTrabajoGrado(URL);
+          });
+      });
+  }
+
+  private actualizarDocumentoTrabajoGrado(nuevoEnlace: string) {
+    this.trabajoGrado.documentoEscrito.Enlace = nuevoEnlace;
+    this.poluxCrud.put('documento_escrito', this.trabajoGrado.documentoEscrito.Id, this.trabajoGrado.documentoEscrito)
+      .subscribe((respuestaActualizarDocumento) => {
+        if (Array.isArray(respuestaActualizarDocumento) &&
+          respuestaActualizarDocumento.length === 1 && respuestaActualizarDocumento[0] === 'Success') {
+          // alerta ok
+        } else {
+          // alerta error
+        }
+      });
+  }
+
+  public solicitarRevision() {
+    const estadoRevisionTrabajoGrado = this.estadosRevision.find(estado => estado.CodigoAbreviacion == 'PENDIENTE_PLX');
+    if (!estadoRevisionTrabajoGrado) {
+      // alerta no estado
+      // notificacion
+      return;
+    }
+
+    const nuevaRevision = <RevisionTrabajoGrado>{
+      NumeroRevision: this.revisionesTrabajoGrado.length + 1,
+      FechaRecepcion: new Date(),
+      EstadoRevisionTrabajoGrado: estadoRevisionTrabajoGrado.Id,
+      DocumentoTrabajoGrado: {
+        Id: this.trabajoGrado.documentoEscrito.Id,
+      },
+      VinculacionTrabajoGrado: {
+        Id: this.revisorId,
+      },
+    };
+
+    this.poluxCrud.post('revision_trabajo_grado', nuevaRevision)
+      .subscribe((respuesta) => {
+        if (Array.isArray(respuesta) && respuesta.length === 1 && respuesta[0] === 'Success') {
+          // alerta ok
+        } else {
+          // alerta error
+        }
+      });
+  }
+
   private consultarDocumentoTrabajoGrado() {
     this.doc = '';
     this.revisionesTrabajoGrado = [];
@@ -182,16 +255,9 @@ export class ListaTrabajosComponent implements OnInit {
     this.poluxCrud.get('revision_trabajo_grado', uri)
       .subscribe((respuestaRevisionesTrabajoGrado: RevisionTrabajoGrado[]) => {
         if (respuestaRevisionesTrabajoGrado.length) {
+          this.doc = respuestaRevisionesTrabajoGrado[0].DocumentoTrabajoGrado.DocumentoEscrito.Enlace;
           this.revisionesTrabajoGrado = respuestaRevisionesTrabajoGrado
             .map((rev) => this.parametros.fillPropiedad(rev, 'EstadoRevisionTrabajoGrado', this.estadosRevision));
-
-          this.gestorDocumental.getByEnlace(respuestaRevisionesTrabajoGrado[0].DocumentoTrabajoGrado.DocumentoEscrito.Enlace)
-            .subscribe(async (ss) => {
-              const url = await this.gestorDocumental.getUrlFile(ss.file, ss['file:content']['mime-type']);
-              if (url) {
-                this.doc = this.sanitization.bypassSecurityTrustResourceUrl(url.toString());
-              }
-            });
         }
       });
   }
@@ -222,7 +288,6 @@ export class ListaTrabajosComponent implements OnInit {
       this.poluxCrud.get('documento_trabajo_grado', uri)
         .subscribe((respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
           if (respuestaDocumentoTrabajoGrado.length > 0) {
-            this.trabajoGrado.documentoTrabajoGrado = respuestaDocumentoTrabajoGrado[0].Id;
             this.trabajoGrado.documentoEscrito = respuestaDocumentoTrabajoGrado[0].DocumentoEscrito;
             resolve();
           } else {
@@ -295,7 +360,7 @@ export class ListaTrabajosComponent implements OnInit {
     })
   }
 
-  private async getParametros2() {
+  private async getParametrosEstudiante() {
     await Promise.all([
       this.getEstadosTrabajoGrado(),
       this.getRolesTrabajoGrado(),

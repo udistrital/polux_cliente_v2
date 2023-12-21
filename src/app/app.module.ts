@@ -1,7 +1,8 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ServiceWorkerModule } from '@angular/service-worker';
-import { CommonModule } from '@angular/common';
+import { CommonModule, HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -10,11 +11,12 @@ import { environment } from 'src/environments/environment';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
   ],
   imports: [
     AppRoutingModule,
     BrowserModule,
+    BrowserAnimationsModule,
     CommonModule,
     HttpClientModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
@@ -22,7 +24,7 @@ import { environment } from 'src/environments/environment';
       registrationStrategy: 'registerWhenStable:30000'
     }),
   ],
-  providers: [],
+  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   bootstrap: [AppComponent]
 })

@@ -5,6 +5,7 @@ import { VersionesDocumentoComponent } from './versiones-documento/versiones-doc
 import { SharedModule } from 'src/app/shared/shared-module.module';
 import { RevisarDocumentoComponent } from './revisar-documento/revisar-documento.component';
 import { VerRevisionComponent } from './ver-revision/ver-revision.component';
+import { NgxExtendedPdfViewerModule } from 'ngx-extended-pdf-viewer';
 
 
 @NgModule({
@@ -16,6 +17,7 @@ import { VerRevisionComponent } from './ver-revision/ver-revision.component';
   ],
   imports: [
     CommonModule,
+    NgxExtendedPdfViewerModule,
     SharedModule,
   ],
   exports: [

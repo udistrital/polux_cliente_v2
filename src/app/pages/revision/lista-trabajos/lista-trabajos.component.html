@@ -29,7 +29,7 @@
       <mat-toolbar>
         <span>Documento Revisión</span>
       </mat-toolbar>
-      <iframe *ngIf="doc" width="100%" height="820px" [src]="doc"></iframe>
+      <app-ver-documento *ngIf="doc" [enlace]="doc"></app-ver-documento>
     </div>
 
     <div>
@@ -52,8 +52,7 @@
               (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
               revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
           </app-revisar-documento>
-          <app-ver-revision [revision]="revision" *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX' &&
-            revision.VinculacionTrabajoGrado.Usuario.toString() !== documento">
+          <app-ver-revision [revision]="revision" *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
           </app-ver-revision>
           <br>
         </mat-expansion-panel>
@@ -73,8 +72,7 @@
       </mat-form-field>
       <mat-form-field appearance="outline" class="form-field-container">
         <mat-label>Revisor</mat-label>
-        <mat-select [(ngModel)]="revisorId" (selectionChange)="consultarTrabajoGrado()"
-          placeholder="Seleccione un trabajo de grado">
+        <mat-select [(ngModel)]="revisorId" placeholder="Seleccione un el revisor para la solicitud">
           <mat-option value=0>Seleccionar</mat-option>
           <mat-option *ngFor="let revisor of vinculados" [value]="revisor.Id">
             {{ revisor.Nombre }}

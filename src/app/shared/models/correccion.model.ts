@@ -6,6 +6,7 @@ export class Correccion {
 	Pagina!: number;
 	RevisionTrabajoGrado!: RevisionTrabajoGrado;
 	Documento!: boolean;
+	EnlaceDocumento!: string;
 }
 
 export class CorreccionDetalle extends Correccion {

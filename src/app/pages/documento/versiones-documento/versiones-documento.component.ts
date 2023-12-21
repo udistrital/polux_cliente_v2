@@ -62,7 +62,7 @@ export class VersionesDocumentoComponent implements OnInit, OnChanges {
 
   private cargarDocumentos() {
     for (const tipoDocumento of this.tiposDocumento) {
-      const uri = `query=TrabajoGrado.Id:${this.trabajoGradoId},DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id}&limit=-1`;
+      const uri = `query=TrabajoGrado.Id:${this.trabajoGradoId},DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id}&limit=1`;
       this.request.get(environment.POLUX_SERVICE, `documento_trabajo_grado?${uri}`)
         .subscribe((respuestaDocumentos: any[]) => {
           if (respuestaDocumentos.length) {
