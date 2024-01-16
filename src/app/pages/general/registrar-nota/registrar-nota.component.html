@@ -1,0 +1,90 @@
+<!-- <mat-spinner></mat-spinner> -->
+<mat-card>
+    <mat-card-title>
+        <h2>Registrar calificación de trabajos de grado</h2>
+    </mat-card-title>
+    <mat-card-content *ngIf="!trabajoSeleccionado">
+        <angular2-smart-table [settings]="settings" [source]="trabajosGrado" (edit)="onRegistrar($event)"
+            (delete)="onVer($event)" (custom)="onDevolver($event)">
+        </angular2-smart-table>
+    </mat-card-content>
+
+    <mat-card-content *ngIf="trabajoSeleccionado">
+        <mat-card>
+            <mat-card-title>
+                <h4>Datos del trabajo de grado</h4>
+            </mat-card-title>
+            <mat-card-content>
+                <p class="text-uppercase"><strong>Nombre: </strong>{{trabajoSeleccionado.TrabajoGrado?.Titulo}}</p>
+                <p class="text-uppercase"><strong>Modalidad: </strong>{{trabajoSeleccionado.Modalidad?.Nombre}}</p>
+                <p class="text-uppercase"><strong>Periodo:
+                    </strong>{{trabajoSeleccionado.TrabajoGrado?.PeriodoAcademico}}</p>
+                <p class="text-uppercase"><strong>Estado: </strong>{{trabajoSeleccionado.EstadoTrabajoGrado?.Nombre}}
+                </p>
+                <p class="text-uppercase"><strong>Documento para revisión: </strong>
+                    <button mat-button type="button" (click)="getDocumento()">
+                        <mat-icon>cloud_download</mat-icon>
+                    </button>
+                </p>
+            </mat-card-content>
+        </mat-card>
+        <mat-card>
+            <mat-card-title>
+                <h4>Estudiantes del trabajo de grado</h4>
+            </mat-card-title>
+            <mat-card-content>
+                <div *ngFor="let estudiante of trabajoSeleccionado?.estudiantes">
+                    <p class="text-uppercase"><strong>Código: </strong>{{estudiante.datos?.codigo}}</p>
+                    <p class="text-uppercase"><strong>Nombre: </strong>{{estudiante.datos?.nombre}}</p>
+                </div>
+            </mat-card-content>
+        </mat-card>
+        <mat-card *ngIf="trabajoSeleccionado.evaluacion">
+            <mat-card-title>
+                <h4>Nota</h4>
+            </mat-card-title>
+            <mat-card-content>
+                <p class="text-uppercase"><strong>Nota registrada por el docente:
+                    </strong>{{trabajoSeleccionado.evaluacion?.Nota}}</p>
+            </mat-card-content>
+        </mat-card>
+        <mat-card *ngIf="notaForm">
+            <mat-card-title>
+                <h4>Nota del Trabajo de Grado</h4>
+            </mat-card-title>
+            <mat-card-content>
+                <form [formGroup]="notaForm" (ngSubmit)="registrarRespuesta()">
+                    <mat-form-field *ngIf="notaForm.get('nota')?.enabled">
+                        <mat-label>Nota</mat-label>
+                        <input type="number" matInput formControlName="nota" placeholder="0.00" min="0" max="5"
+                            step="0.01">
+                        <mat-error>Las calificación debe estar entre 0.0 y 5.0</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="notaForm.get('acta')?.enabled">
+                        <mat-label>Acta de Socialización</mat-label>
+                        <ngx-mat-file-input formControlName="acta" [accept]="'.pdf'">
+                        </ngx-mat-file-input>
+                        <mat-error>Por favor cargue el acta de sustentación</mat-error>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="notaForm.get('correcciones')?.enabled">
+                        <mat-label>Correcciones</mat-label>
+                        <textarea matInput formControlName="correcciones">
+                        </textarea>
+                        <mat-error>Por favor indique las razones por las que devuelve el proyecto de grado</mat-error>
+                    </mat-form-field>
+
+                    <mat-card-actions>
+                        <button mat-raised-button type="submit" color="primary" [disabled]="!notaForm.valid">
+                            REGISTRAR</button>
+                    </mat-card-actions>
+                </form>
+            </mat-card-content>
+        </mat-card>
+    </mat-card-content>
+    <mat-card-actions *ngIf="trabajoSeleccionado">
+        <button mat-raised-button type="button" color="primary" (click)="onVolver()">
+            VOLVER</button>
+    </mat-card-actions>
+</mat-card>

@@ -17,7 +17,7 @@ export class ParametrosService {
   }
 
   public getAllParametroByTipo(tipo: string) {
-    return this.get('parametro', `limit=0&query=TipoParametroId__CodigoAbreviacion:${tipo}`);
+    return this.get('parametro', `limit=0&query=TipoParametroId__CodigoAbreviacion__in:${tipo}`);
   }
 
   public fillPropiedad(obj: any, key: string, parametros: Parametro[]) {
@@ -37,6 +37,10 @@ export class ParametrosService {
     }
 
     return obj;
+  }
+
+  public findParametro(value: number, parametros: Parametro[]) {
+    return parametros.find(parametro => value === parametro.Id) || new Parametro();
   }
 
 }

@@ -36,6 +36,11 @@ const routes: Routes = [{
       canActivateChild: [canActivateChild],
     },
     {
+      path: 'general',
+      loadChildren: () => import('./general/general.module').then(m => m.GeneralModule),
+      canActivateChild: [canActivateChild],
+    },
+    {
       path: 'materias_posgrado',
       loadChildren: () => import('./materias-posgrado/materias-posgrado.module').then(m => m.MateriasPosgradoModule),
       canActivateChild: [canActivateChild],
