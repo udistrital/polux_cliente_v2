@@ -1,1 +1,106 @@
-<p>consulta-trabajo-grado works!</p>
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>
+            Consultar trabajo grado
+        </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+        <!-- <div class="row">
+            <form ng-if="userRole.includes('COORDINADOR_PREGRADO')" name="formCodigoEstudiante" ng-submit="consultarTrabajoGrado()">
+                <div class="col-sm-3">
+                    <label class="control-label"> {{'INPUT.CODIGO_ESTUDIANTE' }} </label>
+                </div>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control col-sm-12" ng-model="codigoEstudiante" required>
+                </div>
+                <div class="col-sm-3">
+                        <input type="submit" ng-disabled="codigoEstudiante.length != 11" value="{{'INPUT.CONSULTAR' }}"  class="col-sm-12 btn btn-success" type="submit">
+                </div>
+            </form>
+        </div>
+        <loading tam="4" load="loadTrabajoGrado" message="mensajeCargandoTrabajoGrado"></loading>
+        <div class="row" ng-if="!loadTrabajoGrado && errorCargandoTrabajoGrado">
+            <br>
+            <div class="col-sm-12">
+                <div class="alert alert-danger">
+                    {{'ERROR' }}: {{mensajeError}}
+                </div>
+            </div>
+        </div> -->
+        <div ng-if="!loadTrabajoGrado && !errorCargandoTrabajoGrado && trabajoCargado">
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>
+                        Datos básicos de los estudiantes.
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div *ngFor="let estudiante of estudiantes">
+                        <p class="text-uppercase"><strong>Código: </strong>{{estudiante.datosBasicos?.codigo}}</p>
+                        <p class="text-uppercase"><strong>Nombre: </strong>{{estudiante.datosBasicos?.nombre}}</p>
+                        <p class="text-uppercase"><strong>Pénsum: </strong>{{estudiante.datosBasicos?.pensum}}</p>
+                        <p class="text-uppercase"><strong>Carrera: </strong>{{estudiante.proyecto}}</p>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+
+            <mat-card>
+                <mat-card-header>
+                    <mat-card-title>
+                        Datos del trabajo de grado.
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <p class="text-uppercase"><strong>Nombre: </strong>{{trabajoGrado.Titulo}}</p>
+                    <p class="text-uppercase"><strong>Modalidad: </strong>{{trabajoGrado.Modalidad?.Nombre}}</p>
+                    <p class="text-uppercase"><strong>Estado: </strong>{{trabajoGrado.EstadoTrabajoGrado?.Nombre}}</p>
+                    <p class="text-uppercase"><strong>Periodo: </strong>{{trabajoGrado.PeriodoAcademico}}</p>
+                    <div>
+                        <p class="text-uppercase"><strong>Areas de Conocimiento: </strong></p>
+                        <p *ngFor="let area of areasConocimiento">
+                            {{area.Nombre}}
+                        </p>
+                    </div>
+
+                    <mat-card>
+                        <mat-card-header>
+                            <mat-card-title>
+                                Asignaturas del Trabajo de Grado:                                .
+                            </mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <angular2-smart-table [settings]="settingsAsignaturas" [source]="asignaturas">
+                            </angular2-smart-table>
+                        </mat-card-content>
+                    </mat-card>
+
+                    <mat-card>
+                        <mat-card-header>
+                            <mat-card-title>
+                                Espacios Académicos.
+                            </mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <angular2-smart-table [settings]="settingsEspacios" [source]="espacios">
+                            </angular2-smart-table>
+                        </mat-card-content>
+                    </mat-card>
+
+                    <mat-card>
+                        <mat-card-header>
+                            <mat-card-title>
+                                Vinculados.
+                            </mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <angular2-smart-table [settings]="settingsVinculaciones" [source]="vinculados">
+                            </angular2-smart-table>
+                        </mat-card-content>
+                    </mat-card>
+
+                </mat-card-content>
+            </mat-card>
+
+        </div>
+    </mat-card-content>
+</mat-card>
