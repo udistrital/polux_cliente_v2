@@ -6,14 +6,16 @@ import { Parametro } from 'src/app/shared/models/parametro.model';
 import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
 import { UserService } from '../../services/userService';
 import { PoluxCrudService } from '../../services/poluxCrudService';
-import { EstudianteTrabajoGrado } from 'src/app/shared/models/estudianteTrabajoGrado.model';
-import { TrabajoGrado, TrabajoGradoDetalle } from 'src/app/shared/models/trabajoGrado.model';
+import { EstudianteTrabajoGrado, EstudianteTrabajoGradoDetalle } from 'src/app/shared/models/estudianteTrabajoGrado.model';
+import { TrabajoGradoDetalle } from 'src/app/shared/models/trabajoGrado.model';
 import { AcademicaService } from '../../services/academicaService';
 import { DocumentoTrabajoGrado } from 'src/app/shared/models/documentoTrabajoGrado.model';
 import { VinculacionTrabajoGradoDetalle } from 'src/app/shared/models/vinculacionTrabajoGrado.model';
 import { DetallePasantia } from 'src/app/shared/models/detallePasantia.model';
 import { EspacioAcademicoInscritoDetalle } from 'src/app/shared/models/espacioAcademicoInscrito.model';
-import { AsignaturaTrabajoGrado } from 'src/app/shared/models/asignaturaTrabajoGrado.model';
+import { AsignaturaTrabajoGradoDetalle } from 'src/app/shared/models/asignaturaTrabajoGrado.model';
+import { Settings } from 'angular2-smart-table';
+import { SmartTableService } from '../../services/smartTableService';
 
 class DetalleEstudiante extends EstudianteTrabajoGrado {
   datosBasicos: any;
@@ -30,9 +32,9 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   tiposDocumento: TipoDocumento[] = [];
 
   codigo = '';
-  trabajoGrado: TrabajoGrado | TrabajoGradoDetalle | undefined;
+  trabajoGrado: TrabajoGradoDetalle = new TrabajoGradoDetalle;
   estudiantes: DetalleEstudiante[] = [];
-  asignaturas: AsignaturaTrabajoGrado[] = [];
+  asignaturas: AsignaturaTrabajoGradoDetalle[] = [];
   vinculados: VinculacionTrabajoGradoDetalle[] = [];
   certificadoARL: DocumentoTrabajoGrado | undefined;
   actaSocializacion: DocumentoTrabajoGrado | undefined;
@@ -40,6 +42,18 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   areasConocimiento: Parametro[] = [];
   espacios: EspacioAcademicoInscritoDetalle[] = [];
   detallePasantia: DetallePasantia | undefined;
+  settingsAsignaturas: Settings;
+  settingsEspacios: Settings;
+  settingsVinculaciones: Settings;
+
+  esAnteproyectoModificable = false;
+  esPrimeraVersion = false
+  esProyectoModificable = false;
+  pasantiaEnEsperaArl = false;
+
+  mensaje = '';
+  cargando = false;
+  showForm = false;
 
   constructor(
     private userService: UserService,
@@ -47,8 +61,12 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     private parametrosCrud: ParametrosService,
     private documentosCrud: DocumentoCrudService,
     private academica: AcademicaService,
+    private smartTable: SmartTableService,
   ) {
     this.codigo = this.userService.getCodigo();
+    this.settingsAsignaturas = this.getSettings;
+    this.settingsEspacios = this.getSettingsEspacios;
+    this.settingsVinculaciones = this.getSettingsVinculaciones;
   }
 
   ngOnInit(): void {
@@ -65,37 +83,45 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     const consultas = await Promise.all([parametros, tiposDocumento]);
     this.parametros = consultas[0];
     this.tiposDocumento = consultas[1];
-    this.cargarTrabajos();
+
+    if (!!this.userService.findAction('verTodosTrabajos')) {
+      this.showForm = true;
+    } else if (!!this.userService.findAction('verTrabajoPropio')) {
+      this.cargarTrabajo();
+    }
   }
 
-  private cargarTrabajos() {
-    // // Consultar trabajo de grado del estudiante
+  public cargarTrabajo() {
+    // Consultar trabajo de grado del estudiante
+    this.cargando = true;
     const estadoEstudiante = this.parametros.find(p => p.CodigoAbreviacion === 'EST_ACT_PLX');
     if (!estadoEstudiante) {
-      // alerta
+      this.mensaje = 'No se pudo consultar el trabajo de grado del estudiante';
+      this.cargando = false;
       return;
     }
 
     const payloadTrabajoGrado = `query=EstadoEstudianteTrabajoGrado:${estadoEstudiante.Id},Estudiante:${this.codigo}&limit=1`;
     this.poluxCrud.get('estudiante_trabajo_grado', payloadTrabajoGrado)
       .subscribe({
-        next: async (responseTrabajoGrado: EstudianteTrabajoGrado[]) => {
+        next: async (responseTrabajoGrado: EstudianteTrabajoGradoDetalle[]) => {
           if (responseTrabajoGrado.length > 0) {
             this.trabajoGrado = responseTrabajoGrado[0].TrabajoGrado;
             const estado = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.EstadoTrabajoGrado, this.parametros);
             const modalidad = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.Modalidad, this.parametros);
 
-            // ctrl.userRole.includes('ESTUDIANTE')
-            const esAnteproyectoModificable = ['AMO_PLX', 'ASMO_PLX'].includes(estado.CodigoAbreviacion);
+            if (true) { // ctrl.userRole.includes('ESTUDIANTE')
+              this.esAnteproyectoModificable = ['AMO_PLX', 'ASMO_PLX'].includes(estado.CodigoAbreviacion);
 
-            // Si el anteproyecto es viable se puede subir la primera versión del proyecto
-            const esPrimeraVersion = ['AVI_PLX', 'ASVI_PLX'].includes(estado.CodigoAbreviacion);
+              // Si el anteproyecto es viable se puede subir la primera versión del proyecto
+              this.esPrimeraVersion = ['AVI_PLX', 'ASVI_PLX'].includes(estado.CodigoAbreviacion);
 
-            // Si el proyecto es modificable
-            const esProyectoModificable = ['MOD_PLX'].includes(estado.CodigoAbreviacion);
+              // Si el proyecto es modificable
+              this.esProyectoModificable = ['MOD_PLX'].includes(estado.CodigoAbreviacion);
 
-            // Si es pasantia y esta en espera de ARL
-            const pasantiaEnEsperaArl = ['PAEA_PLX'].includes(estado.CodigoAbreviacion);;
+              // Si es pasantia y esta en espera de ARL
+              this.pasantiaEnEsperaArl = ['PAEA_PLX'].includes(estado.CodigoAbreviacion);
+            }
 
             this.trabajoGrado.EstadoTrabajoGrado = estado;
             this.trabajoGrado.Modalidad = modalidad;
@@ -105,8 +131,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
               this.cargarCertificadoARL(this.trabajoGrado.Id),
               this.getEstudiantesTg(this.trabajoGrado.Id),
               this.cargarAsignaturasTrabajoGrado(this.trabajoGrado.Id),
-            ]
-
+            ];
 
             if (!['EAPOS_PLX', 'EAPRO_PLX'].includes(modalidad.CodigoAbreviacion)) {
               promises.push(this.getVinculaciones());
@@ -125,64 +150,46 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             }
 
             await Promise.all(promises)
-              .catch((error) => console.log(error));
+              .catch((error) => {
+                this.mensaje = error;
+                this.cargando = false;
+              });
 
-            // COMPRUEBA SI EL USUARIO APROBÓ O NO
-            this.asignaturas.forEach((asignatura) => {
-              if (asignatura.Aprobacion == undefined) {
-                // CONSULTA EL PERIODO ACADEMICO ANTERIOR
-                this.academica.get('periodo_academico', 'P')
-                  .subscribe({
-                    next: (Periodo) => {
-                      var P = Periodo.periodoAcademicoCollection.periodoAcademico[0];
-                      // CONSULTA LOS DATOS DEL ESTUDIANTE
-                      this.academica.get('datos_estudiante', [this.codigo, P.anio, P.periodo].join('/'))
-                        .subscribe({
-                          next: (respuestaDatos) => {
-                            if (respuestaDatos.estudianteCollection.datosEstudiante[0].nivel === 'PREGRADO') {
-                              // VALIDACIÓN PARA LA MODADLIDAD DE MATERIAS DE PROFUNDIZACIÓN EN PREGRADO
-                              if (modalidad.CodigoAbreviacion == "EAPOS") {
-                                if (asignatura.Calificacion >= 3.5) {
-                                  asignatura.Aprobacion = 'Aprobado';
-                                } else {
-                                  asignatura.Aprobacion = 'Reprobado';
-                                }
-                              } else {
-                                if (asignatura.Calificacion >= 3.0) {
-                                  asignatura.Aprobacion = 'Aprobado';
-                                } else {
-                                  asignatura.Aprobacion = 'Reprobado';
-                                }
-                              }
-                            } else if (respuestaDatos.estudianteCollection.datosEstudiante[0].nivel == 'POSGRADO') {
-                              if (asignatura.Calificacion >= 3.5) {
-                                asignatura.Aprobacion = 'Aprobado';
-                              } else {
-                                asignatura.Aprobacion = 'Reprobado';
-                              }
-                            }
-                          }
-                        });
-                    }
-                  });
-              }
-            });
-            //   ctrl.gridOptionsAsignaturas.data = ctrl.trabajoGrado.asignaturas;
-            //   angular.forEach(ctrl.gridOptionsAsignaturas.data, function (asignatura) {
-            //     let EstadoAsignaturaTrabajoGradoTemp = ctrl.EstadosAsignaturaGrado.find(data => {
-            //       return data.Id == asignatura.EstadoAsignaturaTrabajoGrado
-            //     });
-            //     asignatura.EstadoAsignaturaTrabajoGrado = EstadoAsignaturaTrabajoGradoTemp;
-            //   });
-            //   ctrl.gridOptionsEspacios.data = ctrl.trabajoGrado.espacios;
-            //   ctrl.trabajoCargado = true;
-            //   ctrl.loadTrabajoGrado = false;
-            // })
+            if (this.asignaturas.some((asignatura) => asignatura.Aprobacion === undefined)) {
+              // COMPRUEBA SI EL USUARIO APROBÓ O NO
+              this.academica.get('periodo_academico', 'P')
+                .subscribe({
+                  next: (Periodo) => {
+                    const P = Periodo.periodoAcademicoCollection.periodoAcademico[0];
+                    // CONSULTA LOS DATOS DEL ESTUDIANTE
+                    this.academica.get('datos_estudiante', [this.codigo, P.anio, P.periodo].join('/'))
+                      .subscribe({
+                        next: (respuestaDatos) => {
+                          const nivelEstudios = respuestaDatos.estudianteCollection.datosEstudiante[0].nivel
+                          const notaMinima = nivelEstudios === 'PREGRADO' ? 3 : nivelEstudios === 'POSGRADO' ? 3.5 : 0;
+                          this.cargando = false;
+                          this.asignaturas.forEach(asignatura => {
+                            asignatura.Aprobacion = asignatura.Calificacion > notaMinima ? 'Aprobado' : 'Reprobado';
+                          });
+                        }, error: () => {
+                          this.mensaje = 'No se pudo cargar el trabajo de grado';
+                          this.cargando = false;
+                        }
+                      });
+                  }, error: () => {
+                    this.mensaje = 'No se pudo cargar el trabajo de grado';
+                    this.cargando = false;
+                  }
+                });
+            } else {
+              this.cargando = false;
+            }
           } else {
-            // alerta no trabajo de grado en curso
+            this.mensaje = 'El estudiante no tiene un trabajo de grado en curso.';
+            this.cargando = false;
           }
         }, error: () => {
-
+          this.mensaje = 'No se pudo consultar el trabajo de grado del estudiante.';
         }
       });
   }
@@ -215,14 +222,6 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             reject(new Error('No se pudieron consultar los estudiantes del trabajo de grado.'));
           }
         });
-
-      // $q.all(promesasEstudiantes)
-      //   .then(() => {
-      //     ctrl.trabajoGrado.estudiantes = responseEstudiantes.data.map((estudiante) => {
-      //       return estudiante.datos.codigo + " - " + estudiante.datos.nombre;
-      //     }).join(', ');
-      //     defer.resolve();
-      //   })
     })
   }
 
@@ -262,6 +261,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
         .subscribe({
           next: (responseAsignaturas) => {
             this.asignaturas = responseAsignaturas;
+            this.asignaturas.map((rev) => this.parametrosCrud.fillPropiedad(rev, 'EstadoAsignaturaTrabajoGrado', this.parametros));
             if (responseAsignaturas.length) {
               resolve();
             } else {
@@ -407,14 +407,12 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             next: (responseEvaluacion) => {
               if (responseEvaluacion.length > 0) {
                 // Si ya registró la nota
-                vinculacion.Nota = responseEvaluacion[0].Nota;
+                vinculacion.Nota = responseEvaluacion[0].Nota; // Revisar
               } else {
                 // Si no ha registrado ninguna nota
-                vinculacion.Nota = `$translate.instant("ERROR.VINCULADO_NO_NOTA")`;
+                vinculacion.Nota = 'No ha registrado nota en el sistema';
                 // NOTIFICA QUE EL TRABAJO DE GRADO ESTÁ SIN CALIFICAR
-                // angular.forEach(ctrl.trabajoGrado.asignaturas, function (asignatura) {
-                //   asignatura.Aprobacion = $translate.instant("ERROR.SIN_CALIFICACION");
-                // })
+                this.asignaturas.forEach(asignatura => { asignatura.Aprobacion = 'Sin Calificación' }); // Revisar
               }
               resolve();
             }, error: () => {
@@ -526,6 +524,97 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
           }
         });
     });
+  }
+
+  get getSettings(): Settings {
+    return {
+      actions: {
+        columnTitle: 'Acciones',
+        position: 'right',
+        add: false,
+        edit: false,
+        delete: false,
+      },
+      mode: 'external',
+      noDataMessage: 'No tiene trabajos para consultar',
+      columns: {
+        CodigoAsignatura: {
+          title: 'Asignatura',
+        },
+        Anio: {
+          title: 'Año',
+        },
+        Periodo: {
+          title: 'Periodo',
+        },
+        Calificacion: {
+          title: 'Calificación',
+        },
+        EstadoAsignaturaTrabajoGrado: {
+          title: 'Estado',
+          ...this.smartTable.getSettingsObject('Nombre'),
+        },
+        Aprobacion: {
+          title: 'Aprobación',
+        },
+      },
+    };
+  }
+
+  get getSettingsEspacios(): Settings {
+    return {
+      actions: {
+        columnTitle: 'Acciones',
+        position: 'right',
+        add: false,
+        edit: false,
+        delete: false,
+      },
+      mode: 'external',
+      noDataMessage: 'No hay espacios registrados',
+      columns: {
+        EspaciosAcademicosElegibles: {
+          title: 'Asignatura',
+          ...this.smartTable.getSettingsObject('CodigoAsignatura'),
+        },
+        NombreEspacio: {
+          title: 'Año',
+        },
+        EstadoEspacioAcademicoInscrito: {
+          title: 'Estado Trabajo Grado',
+          ...this.smartTable.getSettingsObject('Nombre'),
+        },
+        Nota: {
+          title: 'Nota',
+        },
+      },
+    };
+  }
+
+  get getSettingsVinculaciones(): Settings {
+    return {
+      actions: {
+        columnTitle: 'Acciones',
+        position: 'right',
+        add: false,
+        edit: false,
+        delete: false,
+      },
+      mode: 'external',
+      noDataMessage: 'No hay vinculados al trabajo de grado',
+      columns: {
+        Nombre: {
+          title: 'Nombre',
+        },
+        RolTrabajoGrado: {
+          title: 'Rol',
+          ...this.smartTable.getSettingsObject('Nombre'),
+        },
+        Nota: {
+          title: 'Estado Trabajo Grado',
+        },
+      },
+    };
   }
 
 }

@@ -1,91 +1,107 @@
 <mat-card>
   <mat-card-header>
-    Revisión de Documentos
+    <mat-card-title>
+      Revisión de Documentos
+    </mat-card-title>
   </mat-card-header>
-  <mat-card *ngIf="modo === 'DOCENTE'">
-    <mat-toolbar>
-      <span>Trabajos de grado asociados</span>
-    </mat-toolbar>
-    <mat-form-field appearance="outline">
-      <mat-label>Trabajo de Grado</mat-label>
-      <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="consultarTrabajoGrado()"
-        placeholder="Seleccione un trabajo de grado">
-        <mat-option value=0>Seleccionar</mat-option>
-        <mat-option *ngFor="let trabajo of trabajosDirigidos" [value]="trabajo.TrabajoGrado.Id">
-          {{ trabajo.TrabajoGrado.Titulo + ' (' + trabajo.TrabajoGrado.Modalidad.Nombre + ') -' +
-          'Rol: ' + trabajo.RolTrabajoGrado.Nombre }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-  </mat-card>
+  <mat-card-content>
+    <mat-card *ngIf="modo === 'DOCENTE'">
+      <mat-card-header>
+        <mat-card-title>
+          Trabajos de grado asociados
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field style="width: 100%;">
+          <mat-label>Trabajo de Grado</mat-label>
+          <mat-select [(ngModel)]="trabajoSeleccionadoId" (selectionChange)="consultarTrabajoGrado()"
+            placeholder="Seleccione un trabajo de grado">
+            <mat-option value=0>Seleccionar</mat-option>
+            <mat-option *ngFor="let trabajo of trabajosDirigidos" [value]="trabajo.TrabajoGrado.Id">
+              {{ trabajo.TrabajoGrado.Titulo +
+              ' (' + trabajo.TrabajoGrado.Modalidad.Nombre + ') - ' +
+              'Rol: ' + trabajo.RolTrabajoGrado.Nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
 
-  <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="tiposDocumento"
-    [trabajoGradoId]="trabajoSeleccionadoId">
-  </app-versiones-documento>
+    <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="tiposDocumento"
+      [trabajoGradoId]="trabajoSeleccionadoId">
+    </app-versiones-documento>
 
-  <mat-card style="display: flex; flex-direction: row;"
-    *ngIf="trabajoSeleccionadoId > 0 && revisionesTrabajoGrado.length">
-    <div>
-      <mat-toolbar>
-        <span>Documento Revisión</span>
-      </mat-toolbar>
-      <app-ver-documento *ngIf="doc" [enlace]="doc"></app-ver-documento>
-    </div>
+    <mat-card style="display: flex; flex-direction: row;"
+      *ngIf="trabajoSeleccionadoId > 0 && revisionesTrabajoGrado.length">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            Documento Revisión
+          </mat-card-title>
+        </mat-card-header>
+        <app-ver-documento *ngIf="doc" [enlace]="doc"></app-ver-documento>
+      </mat-card>
 
-    <div>
-      <mat-toolbar>
-        <span>Revisiones</span>
-      </mat-toolbar>
-      <mat-accordion>
-        <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              {{'REVISION'}} {{revision.NumeroRevision}} {{revision.EstadoRevisionTrabajoGrado.Nombre}}
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-          <p>
-            <cite>{{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
-              {{'FECHA_RECEPCION'}}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
-          </p>
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            Revisiones
+          </mat-card-title>
+        </mat-card-header>
+        <mat-accordion>
+          <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                {{'REVISION'}} {{revision.NumeroRevision}} {{revision.EstadoRevisionTrabajoGrado.Nombre}}
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <p>
+              <cite>{{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
+                {{'FECHA_RECEPCION'}}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
+            </p>
 
-          <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
+            <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
               (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
               revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
-          </app-revisar-documento>
-          <app-ver-revision [revision]="revision" *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
-          </app-ver-revision>
-          <br>
-        </mat-expansion-panel>
-      </mat-accordion>
-    </div>
-  </mat-card>
+            </app-revisar-documento>
+            <app-ver-revision [revision]="revision"
+              *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
+            </app-ver-revision>
+            <br>
+          </mat-expansion-panel>
+        </mat-accordion>
+      </mat-card>
+    </mat-card>
 
-  <mat-card *ngIf="modo === 'ESTUDIANTE'">
-    <mat-toolbar>
-      <span>Acciones</span>
-    </mat-toolbar>
-    <mat-card-content class="flex-container-row">
-      <mat-form-field appearance="outline" class="form-field-container">
-        <mat-label>Subir Nueva Versión</mat-label>
-        <ngx-mat-file-input placeholder="{{'SELECCIONAR_ARCHIVO'}}" [(ngModel)]="nuevoDocumento" [accept]="'.pdf'">
-        </ngx-mat-file-input>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="form-field-container">
-        <mat-label>Revisor</mat-label>
-        <mat-select [(ngModel)]="revisorId" placeholder="Seleccione un el revisor para la solicitud">
-          <mat-option value=0>Seleccionar</mat-option>
-          <mat-option *ngFor="let revisor of vinculados" [value]="revisor.Id">
-            {{ revisor.Nombre }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </mat-card-content>
-    <mat-card-actions class="two-buttons-container">
-      <button type="button" (click)="subirVersion()" [disabled]="!nuevoDocumento" mat-raised-button
-        color="primary">NUEVA_VERSIÓN</button>
-      <button type="button" (click)="solicitarRevision()" [disabled]="!(revisorId > 0)" mat-raised-button
-        color="primary">
-        SOLICITAR_REVISION</button>
-    </mat-card-actions>
-  </mat-card>
+    <mat-card *ngIf="modo === 'ESTUDIANTE'">
+      <mat-card-header>
+        <mat-card-title>
+          Acciones
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="flex-container-row">
+        <mat-form-field appearance="outline" class="form-field-container">
+          <mat-label>Subir Nueva Versión</mat-label>
+          <ngx-mat-file-input placeholder="{{'SELECCIONAR_ARCHIVO'}}" [(ngModel)]="nuevoDocumento" [accept]="'.pdf'">
+          </ngx-mat-file-input>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field-container">
+          <mat-label>Revisor</mat-label>
+          <mat-select [(ngModel)]="revisorId" placeholder="Seleccione un el revisor para la solicitud">
+            <mat-option value=0>Seleccionar</mat-option>
+            <mat-option *ngFor="let revisor of vinculados" [value]="revisor.Id">
+              {{ revisor.Nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions class="two-buttons-container">
+        <button type="button" (click)="subirVersion()" [disabled]="!nuevoDocumento" mat-raised-button
+          color="primary">NUEVA VERSIÓN</button>
+        <button type="button" (click)="solicitarRevision()" [disabled]="!(revisorId > 0)" mat-raised-button
+          color="primary">
+          SOLICITAR REVISIÓN</button>
+      </mat-card-actions>
+    </mat-card>
+  </mat-card-content>
 </mat-card>

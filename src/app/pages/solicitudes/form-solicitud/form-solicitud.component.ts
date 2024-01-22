@@ -130,7 +130,7 @@ export class FormSolicitudComponent implements OnInit {
               { Id: 9, estado, Nombre: 'SIN CLASIFICAR' }
             ];
             //  coreAmazonCrudService.get('snies_area').then(function(responseAreas) {
-            //      var areasSnies = responseAreas.data;
+            //      var areasSnies = responseAreas;
             if (Object.keys(areasSnies[0]).length > 0) {
               this.areas.forEach((area) => {
                 areasSnies.forEach((areaSnies) => {
@@ -426,7 +426,7 @@ export class FormSolicitudComponent implements OnInit {
         //
         this.erroresFormulario = true;
       }
-      if (!this.estudiante.areas_elegidas.length && detalle.Detalle.Descripcion == 'asignar-area') {
+      if (!this.estudiante.areas_elegidas?.length && detalle.Detalle.Descripcion == 'asignar-area') {
         // swal(
         //   'Validación del formulario',
         //   'Debe ingresar al menos un área de conocimiento.',

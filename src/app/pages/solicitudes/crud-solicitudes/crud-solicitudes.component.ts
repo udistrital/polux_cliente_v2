@@ -299,7 +299,7 @@ export class CrudSolicitudesComponent implements OnInit {
       environment.POLUX_MID_SERVICE, `verificarRequisitos/Registrar`, this.estudiante)
       .subscribe((requisitos: any) => {
         this.estudiante.Modalidad = null;
-        if (requisitos.data.RequisitosModalidades) {
+        if (requisitos.RequisitosModalidades) {
           return true;
         } else {
           return false;

@@ -1,3 +1,4 @@
+import { Parametro } from "./parametro.model";
 import { TrabajoGrado } from "./trabajoGrado.model";
 
 export class AsignaturaTrabajoGrado {
@@ -8,8 +9,12 @@ export class AsignaturaTrabajoGrado {
 	Aprobacion!: string;
 	Calificacion!: number;
 	TrabajoGrado!: TrabajoGrado;
-	EstadoAsignaturaTrabajoGrado!: number;
+	EstadoAsignaturaTrabajoGrado!: number | Parametro | undefined;
 	Activo!: boolean;
 	FechaCreacion!: string;
 	FechaModificacion!: string;
+}
+
+export class AsignaturaTrabajoGradoDetalle extends AsignaturaTrabajoGrado {
+	override EstadoAsignaturaTrabajoGrado!: Parametro;
 }

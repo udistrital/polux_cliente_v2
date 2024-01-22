@@ -31,4 +31,13 @@ export class UserService {
     return this.user.userService?.documento;
   }
 
+  findAction(accion: string) {
+    return this.findActionFlat(this.permisos, accion);
+  }
+
+  findActionFlat(permisos: any[], accion: string): any {
+    return permisos.find(opt => (opt.Nombre === accion) ||
+      (opt.Opciones && opt.Opciones.length && this.findActionFlat(opt.Opciones, accion)));
+  }
+
 }

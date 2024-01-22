@@ -169,7 +169,7 @@ export class RegistrarNotaComponent implements OnInit {
     this.poluxCrud.get('evaluacion_trabajo_grado', payloadEvaluacion)
       .subscribe((responseEvaluacion) => {
         if (responseEvaluacion.length > 0) {
-          this.trabajoSeleccionado.evaluacion = responseEvaluacion.data[0];
+          this.trabajoSeleccionado.evaluacion = responseEvaluacion[0];
         }
       })
     // .catch((error) => {
@@ -198,7 +198,7 @@ export class RegistrarNotaComponent implements OnInit {
 
       this.poluxCrud.post('tr_registrar_revision_tg', transaccionRechazo)
         .subscribe((response) => {
-          if (response.data[0] === 'Success') {
+          if (response[0] === 'Success') {
             // notificar
           } else {
             // alerta error();
@@ -229,7 +229,7 @@ export class RegistrarNotaComponent implements OnInit {
 
     this.poluxCrud.post('tr_vinculado_registrar_nota', trRegistrarNota)
       .subscribe((responseNota) => {
-        if (responseNota.data[0] === 'Success') {
+        if (responseNota[0] === 'Success') {
           // notificar
         } else {
           // alerta error();
@@ -376,7 +376,7 @@ export class RegistrarNotaComponent implements OnInit {
   get notaButton(): EditAction {
     return {
       editButtonContent: `<i class="fa-solid fa-check-to-slot smart-table-icon" title="Registrar Nota"></i>`,
-      hiddenWhen(row) {
+      disabledWhen(row) {
         const value = row.getData();
         const rol = value.RolTrabajoGrado.CodigoAbreviacion;
         const estado = value.EstadoTrabajoGrado.CodigoAbreviacion;
@@ -399,7 +399,7 @@ export class RegistrarNotaComponent implements OnInit {
         name: 'Devolver',
         title: 'Devolver',
         customButtonContent: `<i class="fa-solid fa-ban smart-table-icon" title="Devolver"></i>`,
-        hiddenWhen(row) {
+        disabledWhen(row) {
           const value = row.getData();
           const rol = value.RolTrabajoGrado.CodigoAbreviacion;
           const estado = value.EstadoTrabajoGrado.CodigoAbreviacion;

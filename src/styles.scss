@@ -5,12 +5,12 @@
 @include mat-core();
 
 $polux-theme: (
-    50: var(--color200),
-    100: var(--color400),
-    200: var(--color400),
-    300: var(--color500),
-    400: var(--color500),
-    500: var(--color600),
+    50: var(--color100),
+    100: var(--color100),
+    200: var(--color200),
+    300: var(--color300),
+    400: var(--color400),
+    500: var(--color500),
     600: var(--color600),
     700: var(--color700),
     800: var(--color800),
@@ -35,10 +35,42 @@ $polux-theme: (
         A700: white,
     ),
 );
+$polux-theme-warn: (
+    50 : #f2e1e6,
+    100 : var(--danger-base),
+    200 : var(--danger-base),
+    300 : #b14f6d,
+    400 : #a0294d,
+    500 : var(--danger-accent),
+    600 : #870329,
+    700 : var(--danger-main),
+    800 : var(--danger-main),
+    900 : #600112,
+    A100 : var(--danger-base),
+    A200 : #ff5d6e,
+    A400 : #ff2a40,
+    A700 : var(--danger-accent),
+    contrast: (50 : #000000,
+        100 : #000000,
+        200 : #000000,
+        300 : #ffffff,
+        400 : #ffffff,
+        500 : #ffffff,
+        600 : #ffffff,
+        700 : #ffffff,
+        800 : #ffffff,
+        900 : #ffffff,
+        A100 : #000000,
+        A200 : #000000,
+        A400 : #ffffff,
+        A700 : #ffffff,
+    )
+);
 
-$mat-mytheme-primary: mat-palette($polux-theme, 100);
+$mat-mytheme-primary: mat-palette($polux-theme, A200, A100, A400);
 $mat-mytheme-accent: mat-palette($mat-green, A200, A100, A400);
-$mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent);
+$mat-mytheme-warn: mat-palette($polux-theme-warn, A200, A100, A400);
+$mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent, $mat-mytheme-warn);
 @include angular-material-theme($mat-mytheme);
 
 // angular-2-smart-table
@@ -49,6 +81,28 @@ $mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent);
 .smart-table-icon-add {
     font-size: 1.5rem;
     color: #fff;
+}
+
+.not-allowed {
+    color: var(--color400) !important;
+}
+
+.angular2-smart-actions {
+    width: 100px !important;
+}
+
+.angular2-smart-filter {
+    color: black !important;
+}
+
+table thead tr th {
+    background-color: var(--color800);
+}
+
+angular2-smart-table-title {
+    a {
+        color: var(--color100) !important;
+    }
 }
 
 // material
@@ -65,3 +119,14 @@ $mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent);
     padding-top: 1rem !important;
 }
 
+.mat-mdc-form-field {
+    padding-right: 1rem !important;
+}
+
+.mat-mdc-form-field-hint {
+    color: #00000099 !important;
+}
+
+.main-container {
+    flex-direction: column;
+}

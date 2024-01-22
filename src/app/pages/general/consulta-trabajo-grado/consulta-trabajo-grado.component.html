@@ -5,29 +5,28 @@
         </mat-card-title>
     </mat-card-header>
     <mat-card-content>
-        <!-- <div class="row">
-            <form ng-if="userRole.includes('COORDINADOR_PREGRADO')" name="formCodigoEstudiante" ng-submit="consultarTrabajoGrado()">
-                <div class="col-sm-3">
-                    <label class="control-label"> {{'INPUT.CODIGO_ESTUDIANTE' }} </label>
-                </div>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control col-sm-12" ng-model="codigoEstudiante" required>
-                </div>
-                <div class="col-sm-3">
-                        <input type="submit" ng-disabled="codigoEstudiante.length != 11" value="{{'INPUT.CONSULTAR' }}"  class="col-sm-12 btn btn-success" type="submit">
-                </div>
-            </form>
+        <mat-card *ngIf="showForm">
+            <mat-card-content style="width: 100%;">
+                <mat-form-field>
+                    <mat-hint>Ingrese el código de un estudiante para ver su trabajo de grado</mat-hint>
+                    <mat-label>Código del estudiante</mat-label>
+                    <input type="text" matInput [(ngModel)]="codigo">
+                </mat-form-field>
+            </mat-card-content>
+            <mat-card-actions align="end">
+                <button mat-raised-button type="button" color="primary" [disabled]="!codigo.length" (click)="cargarTrabajo()">
+                    CONSULTAR
+                </button>
+            </mat-card-actions>
+        </mat-card>
+
+        <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+
+        <div *ngIf="mensaje">
+            <p>{{mensaje}}</p>
         </div>
-        <loading tam="4" load="loadTrabajoGrado" message="mensajeCargandoTrabajoGrado"></loading>
-        <div class="row" ng-if="!loadTrabajoGrado && errorCargandoTrabajoGrado">
-            <br>
-            <div class="col-sm-12">
-                <div class="alert alert-danger">
-                    {{'ERROR' }}: {{mensajeError}}
-                </div>
-            </div>
-        </div> -->
-        <div ng-if="!loadTrabajoGrado && !errorCargandoTrabajoGrado && trabajoCargado">
+
+        <div *ngIf="!mensaje && estudiantes?.length">
             <mat-card>
                 <mat-card-header>
                     <mat-card-title>
@@ -65,7 +64,7 @@
                     <mat-card>
                         <mat-card-header>
                             <mat-card-title>
-                                Asignaturas del Trabajo de Grado:                                .
+                                Asignaturas del Trabajo de Grado.
                             </mat-card-title>
                         </mat-card-header>
                         <mat-card-content>
