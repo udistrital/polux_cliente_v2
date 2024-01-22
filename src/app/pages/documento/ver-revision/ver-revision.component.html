@@ -2,13 +2,13 @@
     <mat-expansion-panel *ngFor="let correccion of comentariosCorreccion">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                {{'CORRECCION'}}
+                CORRECCIÓN
             </mat-panel-title>
         </mat-expansion-panel-header>
 
         <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
             <button type="button" (click)="descargarArchivo(correccion.Correccion.Observacion)" mat-raised-button
-                color="primary">{{'VER_ADJUNTO'}}</button>
+                color="primary">Ver Adjunto</button>
         </div>
         <mat-expansion-panel *ngFor="let comentario of correccion.Comentarios">
             <mat-expansion-panel-header>
@@ -25,12 +25,12 @@
         </mat-expansion-panel>
         <mat-card>
             <mat-form-field appearance="outline">
-                <mat-label>{{'NUEVO_COMENTARIO'}}</mat-label>
+                <mat-label>Nuevo Comentario</mat-label>
                 <textarea matInput [(ngModel)]="correccion.NuevoComentario"></textarea>
             </mat-form-field>
             <mat-card-actions align="end">
                 <button type="button" [disabled]="!correccion.NuevoComentario.length"
-                    (click)="postComentario(correccion)" mat-raised-button color="primary">PUBLICAR</button>
+                    (click)="postComentario(correccion)" mat-raised-button color="primary">Publicar</button>
             </mat-card-actions>
         </mat-card>
     </mat-expansion-panel>

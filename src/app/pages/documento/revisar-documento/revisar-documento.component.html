@@ -2,11 +2,11 @@
     <mat-expansion-panel [expanded]="true">
         <mat-expansion-panel-header>
             <mat-panel-title>
-                {{'CORRECCIONES REALIZADAS'}}
+                CORRECCIONES REALIZADAS
             </mat-panel-title>
         </mat-expansion-panel-header>
         <p>
-            <cite>{{'FECHA_RECEPCION' }}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
+            <cite>Fecha de Recepción: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
         </p>
 
         <!-- <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
@@ -17,7 +17,7 @@
         <mat-expansion-panel [expanded]="true" *ngFor="let correccion of comentariosCorreccion; let i = index">
             <mat-expansion-panel-header style="display: flex;">
                 <mat-panel-title>
-                    {{'CORRECCION'}}
+                    Corrección
                 </mat-panel-title>
                 <button mat-icon-button color="primary" (click)="eliminarCorreccion(i)">
                     <mat-icon>delete</mat-icon>
@@ -25,19 +25,19 @@
             </mat-expansion-panel-header>
             <mat-card>
                 <mat-form-field appearance="outline">
-                    <mat-label>{{'ENUNCIADO'}}</mat-label>
+                    <mat-label>Enunciado</mat-label>
                     <input type="text" matInput [(ngModel)]="correccion.Correccion.Observacion">
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                    <ngx-mat-file-input placeholder="{{'SELECCIONAR_ARCHIVO'}}"
+                    <ngx-mat-file-input placeholder="Seleccionar Archivo"
                         [ngModel]="correccion.Correccion.Observacion" [accept]="'.pdf'">
                     </ngx-mat-file-input>
                 </mat-form-field>
 
                 <div class="container-flex-row" *ngFor="let comentario of correccion.Comentarios; let j = index">
                     <mat-form-field appearance="outline" class="form-field">
-                        <mat-label>{{'COMENTARIO'}}</mat-label>
+                        <mat-label>Comentario</mat-label>
                         <textarea matInput [(ngModel)]="comentario.Comentario"></textarea>
                     </mat-form-field>
                     <button mat-icon-button color="primary" (click)="eliminarComentario(i, j)">
@@ -46,16 +46,15 @@
                 </div>
                 <mat-card-actions align="end">
                     <button type="button" [disabled]="" (click)="agregarComentario(i)" mat-raised-button
-                        color="primary">NUEVO_COMENTARIO</button>
+                        color="primary">Nuevo Comentario</button>
                 </mat-card-actions>
-
             </mat-card>
         </mat-expansion-panel>
         <mat-card-actions>
             <button type="button" (click)="agregarCorreccion()" mat-raised-button
-                color="primary">NUEVA_CORRECCION</button>
+                color="primary">Nueva Corrección</button>
             <button type="button" (click)="postRevision()" mat-raised-button color="primary">
-                ENVIAR_REVISION</button>
+                Enviar Revisión</button>
         </mat-card-actions>
     </mat-expansion-panel>
 </mat-accordion>

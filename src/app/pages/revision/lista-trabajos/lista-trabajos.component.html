@@ -48,28 +48,31 @@
             Revisiones
           </mat-card-title>
         </mat-card-header>
-        <mat-accordion>
-          <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                {{'REVISION'}} {{revision.NumeroRevision}} {{revision.EstadoRevisionTrabajoGrado.Nombre}}
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <p>
-              <cite>{{'FECHA_REVISION'}}: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
-                {{'FECHA_RECEPCION'}}: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
-            </p>
+        <mat-card-content>
+          <mat-accordion>
+            <mat-expansion-panel *ngFor="let revision of revisionesTrabajoGrado">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  Revisión {{revision.NumeroRevision}} {{revision.EstadoRevisionTrabajoGrado.Nombre}}
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <p>
+                <cite>Fecha Revisión: {{revision.FechaRevision | date:'dd-MMM-yyyy'}} |
+                  Fecha Recepción: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
+              </p>
 
-            <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
-              (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
-              revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
-            </app-revisar-documento>
-            <app-ver-revision [revision]="revision"
-              *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
-            </app-ver-revision>
-            <br>
-          </mat-expansion-panel>
-        </mat-accordion>
+              <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
+                (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
+                revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
+              </app-revisar-documento>
+
+              <app-ver-revision [revision]="revision"
+                *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
+              </app-ver-revision>
+              <br>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </mat-card-content>
       </mat-card>
     </mat-card>
 
