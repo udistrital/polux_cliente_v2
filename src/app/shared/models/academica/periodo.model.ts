@@ -1,45 +1,45 @@
-export class responsePeriodo {
+export type responsePeriodo = {
     periodoAcademicoCollection: {
         periodoAcademico: periodo[];
     } | undefined
 }
 
-export class periodo {
-    anio = '';
-    periodo = '';
+export type periodo = {
+    anio: string;
+    periodo: string;
 }
 
-export class responseCoordinadorCarrera {
+export type responseCoordinadorCarrera = {
     coordinadorCollection: {
         coordinador: coordinador[];
     } | undefined
 }
 
-export class coordinador {
-    codigo_proyecto_curricular = '';
-    nombre_coordinador = '';
-    nombre_proyecto_curricular = '';
+export type coordinador = {
+    codigo_proyecto_curricular: string;
+    nombre_coordinador: string;
+    nombre_proyecto_curricular: string;
 }
 
-export class responsePensums {
+export type responsePensums = {
     pensums: {
         pensum: pensum[];
     } | undefined
 }
 
-export class pensum {
-    pensum = '';
+export type pensum = {
+    pensum: string;
 }
 
-export class responseAsignatura {
+export type responseAsignatura = {
     asignaturaCollection: {
         asignatura: asignatura[];
     } | undefined
 }
 
-export class asignatura {
-    codigo = '';
-    creditos = '';
-    nombre = '';
-    semestre = '';
+export type asignatura = {
+    codigo: string;
+    creditos: string;
+    nombre: string;
+    semestre: string;
 }

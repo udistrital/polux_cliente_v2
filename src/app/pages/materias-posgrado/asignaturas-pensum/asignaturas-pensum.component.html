@@ -1,11 +1,57 @@
 <mat-card>
     <mat-card-header>
         <mat-card-title>
-            Publicar asignatura
+            Listado de asignaturas registradas
         </mat-card-title>
     </mat-card-header>
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
     <mat-card-content>
-        <angular2-smart-table [settings]="settings" [source]="asignaturas" (userRowSelect)="onRowSelect($event)">
-        </angular2-smart-table>
+        <p *ngIf="mensaje">{{mensaje}}</p>
+
+        <div *ngIf="!mensaje">
+            <table mat-table [dataSource]="dataSource" matSort aria-label="Asignaturas">
+                <ng-container matColumnDef="check">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <mat-checkbox (change)="toggleAllCheckboxes($event)"></mat-checkbox>
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox [(ngModel)]="row.check" (change)="getTotalCreditos()"></mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="codigo">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Codigo</th>
+                    <td mat-cell *matCellDef="let row">{{row.codigo}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="creditos">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Creditos</th>
+                    <td mat-cell *matCellDef="let row">{{row.creditos}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+                    <td mat-cell *matCellDef="let row">{{row.nombre}}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="semestre">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Semestre</th>
+                    <td mat-cell *matCellDef="let row">{{row.semestre}}</td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+
+            <mat-paginator #paginator [length]="dataSource.data.length" [pageIndex]="0" [pageSize]="10"
+                [pageSizeOptions]="[5, 10, 20]" aria-label="Select page">
+            </mat-paginator>
+        </div>
     </mat-card-content>
+    <mat-card-actions *ngIf="!mensaje" align="end">
+        <button mat-raised-button type="button" color="primary"
+            [disabled]="creditosMinimos < 0 || totalCreditos < creditosMinimos" (click)="registrarMaterias()">
+            REGISTRAR ESPACIOS ACADÉMICOS
+        </button>
+    </mat-card-actions>
 </mat-card>

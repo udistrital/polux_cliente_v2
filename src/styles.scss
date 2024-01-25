@@ -73,7 +73,7 @@ $mat-mytheme-warn: mat-palette($polux-theme-warn, A200, A100, A400);
 $mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent, $mat-mytheme-warn);
 @include angular-material-theme($mat-mytheme);
 
-// angular-2-smart-table
+// tablas
 .smart-table-icon {
     font-size: 1.5rem;
 }
@@ -96,13 +96,17 @@ $mat-mytheme: mat-light-theme($mat-mytheme-primary, $mat-mytheme-accent, $mat-my
 }
 
 table thead tr th {
-    background-color: var(--color800);
+    background-color: var(--color800) !important
 }
 
 angular2-smart-table-title {
     a {
         color: var(--color100) !important;
     }
+}
+
+.mat-mdc-table {
+    border: 2px solid var(--color700) !important;
 }
 
 // material
@@ -129,4 +133,10 @@ angular2-smart-table-title {
 
 .main-container {
     flex-direction: column;
+}
+
+// classes
+.flex-centered-container {
+    display: flex;
+    justify-content: center;
 }

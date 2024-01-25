@@ -1,14 +1,18 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Settings } from 'angular2-smart-table';
+import { AfterViewInit, Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 import { asignatura, periodo, responseAsignatura } from 'src/app/shared/models/academica/periodo.model';
 import { AcademicaService } from '../../services/academicaService';
 import { PoluxCrudService } from '../../services/poluxCrudService';
-import { SesionesCrudService } from '../../services/sesionesCrudService';
 import { EspaciosAcademicosElegibles } from 'src/app/shared/models/espaciosAcademicosElegibles.model';
-import * as moment from 'moment';
+import { PoluxMidService } from '../../services/poluxMidService';
+import { creditosMinimosResponse } from 'src/app/shared/models/poluxMid/creditosMinimos.model';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatCheckboxChange } from '@angular/material/checkbox';
+import { CarreraElegible } from 'src/app/shared/models/carreraElegible.model';
+import { AlertService } from '../../services/alertService';
 
-class asignaturaTabla extends asignatura {
-  check = false;
+type asignaturaTabla = asignatura & {
+  check: boolean;
 }
 
 @Component({
@@ -16,164 +20,184 @@ class asignaturaTabla extends asignatura {
   templateUrl: './asignaturas-pensum.component.html',
   styleUrls: ['./asignaturas-pensum.component.scss']
 })
-export class AsignaturasPensumComponent implements OnInit {
+export class AsignaturasPensumComponent implements OnChanges, OnInit, AfterViewInit {
   @Input() carrera = '';
   @Input() pensum = '';
-  @Input() periodo: periodo = new periodo;
+  @Input() modalidad!: 'PREGRADO' | 'POSGRADO';
+  @Input() periodo!: periodo;
 
-  asignaturas: asignaturaTabla[] = [];
   totalCreditos = 0;
+  creditosMinimos = -1;
 
-  settings: Settings = {
-    actions: {
-      columnTitle: 'Acciones',
-      position: 'right',
-      add: false,
-      edit: false,
-      delete: false,
-    },
-    mode: 'external',
-    selectMode: 'multi',
-    noDataMessage: 'No tiene trabajos para consultar',
-    columns: {
-      codigo: {
-        title: 'Código',
-      },
-      nombre: {
-        title: 'Nombre',
-      },
-      creditos: {
-        title: 'Créditos',
-      },
-      semestre: {
-        title: 'Semestre',
-      },
-    },
-  }
+  mensaje = '';
+  cargando = false;
+
+  displayedColumns = ['check', 'codigo', 'creditos', 'nombre', 'semestre'];
+  dataSource = new MatTableDataSource<asignaturaTabla>([]);
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private academica: AcademicaService,
     private poluxCrud: PoluxCrudService,
-    private sesionesCrud: SesionesCrudService,
+    private poluxMid: PoluxMidService,
   ) { }
 
-  ngOnInit(): void {
-    this.cargarAsignaturas();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (Object.values(changes).some(change => !change.firstChange)) {
+      this.dataSource.data = [];
+      this.cargando = true;
+      this.cargarAsignaturas()
+        .catch((err) => this.mensaje = err)
+        .finally(() => this.cargando = false);
+    }
   }
 
-  cargarAsignaturas() {
+  ngOnInit(): void {
+    this.cargarParametros();
+  }
+
+  ngAfterViewInit(): void {
+    this.dataSource.paginator = this.paginator;
+  }
+
+  private async cargarParametros() {
     if (!this.carrera || !this.pensum) {
       return;
     }
 
-    this.verificarFechas();
-    this.academica.get('asignaturas_carrera_pensum', `${this.carrera}/${this.pensum}`)
-      .subscribe({
-        next: (response: responseAsignatura) => {
-          if (response.asignaturaCollection?.asignatura) {
-            this.buscarAsignaturasElegibles(response.asignaturaCollection.asignatura);
-          }
-          // ctrl.habilitar = false;
-          // ctrl.habilitar2 = true;
-
-          // traer fechas para habilitar botones
-          // promiseArr.push(ctrl.verificarFechas($scope.periodo, $scope.anio));
-        }, error: () => {
-          // ctrl.mensajeError = $translate.instant('ERROR.CARGAR_ASIGNATURAS_SOLICITUD');
-        }
-      });
+    this.cargando = true;
+    await Promise.all([this.cargarAsignaturas(), this.getCreditosMinimos()])
+      .catch((err) => this.mensaje = err)
+      .finally(() => this.cargando = false);
   }
 
-  private buscarAsignaturasElegibles(asignaturas: asignatura[]) {
-    const payloadCarreras = `query=CodigoCarrera:${this.carrera},CodigoPensum:${this.pensum}`; +
-      `,Anio:${this.periodo.anio},Periodo:${this.periodo.periodo}`;
-    this.poluxCrud.get('carrera_elegible', payloadCarreras)
-      .subscribe({
-        next: (response) => {
-          if (response.length > 0) {
-            const codigos = asignaturas.map(as => as.codigo);
-            var parametros = `query=CarreraElegible__Id:${response[0].Id},CodigoAsignatura__in:${codigos}`;
-            this.poluxCrud.get('espacios_academicos_elegibles', parametros)
-              .subscribe({
-                next: (response: EspaciosAcademicosElegibles[]) => {
-                  asignaturas.forEach((asignatura: asignatura) => {
-                    const asignaturaTabla = <asignaturaTabla>{
-                      ...asignatura,
-                    };
-
-                    const asignaturaEncontrada = response.find(a => asignatura.codigo === `${a.CodigoAsignatura}`);
-                    if (asignaturaEncontrada) {
-                      asignaturaTabla.check = asignaturaEncontrada.Activo;
-                      this.totalCreditos += parseInt(asignatura.creditos, 10);
-                    }
-
-                    this.asignaturas.push(asignaturaTabla);
-                  });
-                }, error: () => {
-                  // ctrl.mensajeError = $translate.instant('ERROR.CARGAR_ASIGNATURAS_SOLICITUD');
-                }
-              });
-          } else { // si la carrera no está en la tabla: carrera_elegible
-            asignaturas.forEach((asignatura: asignatura) => {
-              const asignaturaTabla = <asignaturaTabla>{
-                ...asignatura,
-                check: false,
-              };
-              this.asignaturas.push(asignaturaTabla);
-            });
-          }
-        }, error: () => {
-          // ctrl.mensajeError = $translate.instant('ERROR.CARGAR_ASIGNATURAS_SOLICITUD');
-        }
-      });
-  }
-
-  private verificarFechas() {
-    const fechaActual = moment().format('YYYY-MM-DD HH:mm');
-    const modalidad = 'POSGRADO';
-    let tipoSesionPadre = 0;
-    if (modalidad === 'POSGRADO') {
-      tipoSesionPadre = 1;
-    } else if (modalidad === 'PREGRADO') {
-      tipoSesionPadre = 9;
-    }
-    const payloadSesiones = `limit=1&query=SesionPadre.TipoSesion.Id:${tipoSesionPadre}` +
-      `,SesionHijo.TipoSesion.CodigoAbreviacion:PMP,SesionPadre.periodo:${this.periodo.anio}${this.periodo.periodo}`;
-
-    this.sesionesCrud.get('relacion_sesiones', payloadSesiones)
-      .subscribe({
-        next: (responseFechas) => {
-          if (responseFechas.length > 0) {
-            const sesion = responseFechas[0];
-            const fechaHijoInicio = new Date(sesion.SesionHijo.FechaInicio);
-            fechaHijoInicio.setTime(fechaHijoInicio.getTime() + fechaHijoInicio.getTimezoneOffset() * 60 * 1000);
-
-            let fechaInicio = moment(fechaHijoInicio).format('YYYY-MM-DD HH:mm');
-            const fechaHijoFin = new Date(sesion.SesionHijo.FechaFin);
-            fechaHijoFin.setTime(fechaHijoFin.getTime() + fechaHijoFin.getTimezoneOffset() * 60 * 1000);
-
-            fechaInicio = moment(fechaHijoInicio).format('YYYY-MM-DD HH:mm');
-            const fechaFin = moment(fechaHijoFin).format('YYYY-MM-DD HH:mm');
-
-            if (fechaInicio <= fechaActual && fechaActual <= fechaFin) {
-              // ctrl.mostrarBotones = false;
-              // deferFechas.resolve();
+  private cargarAsignaturas(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.academica.get('asignaturas_carrera_pensum', `${this.carrera}/${this.pensum}`)
+        .subscribe({
+          next: (response: responseAsignatura) => {
+            if (response.asignaturaCollection?.asignatura?.length) {
+              this.buscarAsignaturasElegibles(response.asignaturaCollection.asignatura)
+                .then(() => resolve())
+                .catch((err) => reject(err));
             } else {
-              // ctrl.mostrarBotones = true;
-              // deferFechas.resolve();
+              reject('No se encontraron asignaturas para el pénsum seleccionado.');
             }
-          } else {
-            // ctrl.mensajeError = $translate.instant('ERROR.SIN_FECHAS_MODALIDAD');
-            // deferFechas.reject(false);
+          }, error: () => {
+            reject('No se pudieron cargar las asignaturas para el pénsum seleccionado.');
           }
-        }, error: () => {
-          // ctrl.mensajeError = $translate.instant('ERROR.CARGAR_FECHAS_MODALIDAD');
-          // deferFechas.reject(error);
-        }
-      });
+        });
+    });
   }
 
-  onRowSelect(event: any) {
+  private buscarAsignaturasElegibles(asignaturas: asignatura[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const payloadCarreras = `query=CodigoCarrera:${this.carrera},CodigoPensum:${this.pensum}` +
+        `,Anio:${this.periodo.anio},Periodo:${this.periodo.periodo},Nivel:${this.modalidad}`;
+      this.poluxCrud.get('carrera_elegible', payloadCarreras)
+        .subscribe({
+          next: (response) => {
+            if (response.length > 0) {
+              const codigos = asignaturas.map(as => as.codigo);
+              var parametros = `query=Activo:true,CarreraElegible:${response[0].Id},CodigoAsignatura__in:${codigos.join('|')}`;
+              this.poluxCrud.get('espacios_academicos_elegibles', parametros)
+                .subscribe({
+                  next: (response: EspaciosAcademicosElegibles[]) => {
+                    this.dataSource.data = asignaturas.map(asignatura => {
+                      const asignaturaElegible = response.find(a => asignatura.codigo === `${a.CodigoAsignatura}`);
+                      return <asignaturaTabla>{
+                        ...asignatura,
+                        check: asignaturaElegible?.Activo,
+                      };
+                    });
+
+                    this.getTotalCreditos();
+                    resolve();
+                  }, error: () => {
+                    reject('No se pudieron cargar los espacios académicos registrados.')
+                  }
+                });
+            } else {
+              this.dataSource.data = asignaturas.map(a => {
+                return <asignaturaTabla>{
+                  ...a,
+                  check: false,
+                };
+              });
+              resolve();
+            }
+          }, error: () => {
+            reject('No se pudieron cargar las carreras registradas.')
+          }
+        });
+    })
   }
 
+  private getCreditosMinimos(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.poluxMid.get('creditos/ObtenerMinimo', '')
+        .subscribe({
+          next: (response: creditosMinimosResponse) => {
+            if (this.modalidad === 'POSGRADO') {
+              this.creditosMinimos = parseInt(response.minimo_creditos_posgrado);
+            } else if (this.modalidad === 'PREGRADO') {
+              this.creditosMinimos = parseInt(response.minimo_creditos_profundizacion);
+            }
+            resolve();
+          }, error: () => {
+            reject('Ocurrió un error al cargar el minimo de creditos, por favor verifique su conexión, e intente de nuevo.');
+          }
+        });
+    });
+  }
+
+  public getTotalCreditos() {
+    this.totalCreditos = this.dataSource.data.filter(asignatura => asignatura.check)
+      .reduce((acc, curr) => acc + parseInt(curr.creditos, 10), 0);
+  }
+
+  public toggleAllCheckboxes(event: MatCheckboxChange) {
+    this.dataSource.data.forEach(a => a.check = event.checked);
+    this.getTotalCreditos();
+  }
+
+  public registrarMaterias() {
+    if (this.totalCreditos >= this.creditosMinimos) {
+      const carreraElegible = <CarreraElegible>{
+        CodigoCarrera: parseInt(this.carrera, 10),
+        Periodo: parseInt(this.periodo.periodo, 10),
+        Anio: parseInt(this.periodo.anio, 10),
+        CodigoPensum: parseInt(this.pensum, 10),
+        Nivel: this.modalidad,
+      };
+
+      const espacios: EspaciosAcademicosElegibles[] = [];
+      this.dataSource.data.filter(asignatura => asignatura.check)
+        .forEach(asignaturaSeleccionada => {
+          espacios.push(<EspaciosAcademicosElegibles>{
+            CodigoAsignatura: parseInt(asignaturaSeleccionada.codigo, 10),
+            Activo: true,
+            CarreraElegible: carreraElegible,
+          });
+        });
+
+      const transaccion = <TrPublicarAsignaturas>{
+        CarreraElegible: carreraElegible,
+        EspaciosAcademicosElegibles: espacios,
+      };
+
+      this.poluxCrud.post('tr_publicar_asignaturas', transaccion)
+        .subscribe({
+          next: () => {
+          }, error: () => {
+          }
+        });
+    }
+  }
+
+}
+
+interface TrPublicarAsignaturas {
+  CarreraElegible: CarreraElegible;
+  EspaciosAcademicosElegibles: EspaciosAcademicosElegibles[];
 }

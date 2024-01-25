@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { AcademicaService } from '../../services/academicaService';
 import { UserService } from '../../services/userService';
 import { coordinador, pensum, periodo, responseCoordinadorCarrera, responsePeriodo } from 'src/app/shared/models/academica/periodo.model';
+import { RelacionSesiones } from 'src/app/shared/models/sesionesCrud/relacionSesiones.model';
+import { SesionesCrudService } from '../../services/sesionesCrudService';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-seleccionar-pensum',
@@ -10,7 +13,7 @@ import { coordinador, pensum, periodo, responseCoordinadorCarrera, responsePerio
 })
 export class SeleccionarPensumComponent implements OnInit {
   documento = '';
-  periodo: periodo = new periodo();
+  periodo!: periodo;
   carreras: coordinador[] = [];
   pensums: pensum[] = [];
 
@@ -22,6 +25,7 @@ export class SeleccionarPensumComponent implements OnInit {
 
   constructor(
     private academica: AcademicaService,
+    private sesionesCrud: SesionesCrudService,
     private userService: UserService,
   ) {
     this.documento = this.userService.getDocumento();
@@ -29,13 +33,12 @@ export class SeleccionarPensumComponent implements OnInit {
 
   ngOnInit() {
     this.cargando = true;
-    this.cargar();
-  }
 
-  async cargar() {
-    await Promise.all([this.cargarCarrerasCoordinador(), this.cargarPeriodo()])
+    this.cargarPeriodo()
+      .then(() => this.verificarFechas())
+      .then(() => this.cargarCarrerasCoordinador())
       .catch((err) => this.mensaje = err)
-      .finally(() => { this.cargando = false });
+      .finally(() => this.cargando = false);
   }
 
   public getPensums() {
@@ -96,6 +99,44 @@ export class SeleccionarPensumComponent implements OnInit {
           },
         });
     })
+  }
+
+  private verificarFechas(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const fechaActual = moment().format('YYYY-MM-DD HH:mm');
+      const tipoSesionPadre = 1;
+
+      const payloadSesiones = `limit=-1&query=SesionPadre.TipoSesion.Id:${tipoSesionPadre}` +
+        `,SesionHijo.TipoSesion.CodigoAbreviacion:PMP,SesionPadre.periodo:${this.periodo.anio}${this.periodo.periodo}`;
+
+      this.sesionesCrud.get('relacion_sesiones', payloadSesiones)
+        .subscribe({
+          next: (responseFechas: RelacionSesiones[]) => {
+            if (responseFechas.length > 0) {
+              const sesion = responseFechas[0];
+              const fechaHijoInicio = new Date(sesion.SesionHijo.FechaInicio);
+              fechaHijoInicio.setTime(fechaHijoInicio.getTime() + fechaHijoInicio.getTimezoneOffset() * 60 * 1000);
+
+              let fechaInicio = moment(fechaHijoInicio).format('YYYY-MM-DD HH:mm');
+              fechaInicio = moment(fechaHijoInicio).format('YYYY-MM-DD HH:mm');
+
+              const fechaHijoFin = new Date(sesion.SesionHijo.FechaFin);
+              fechaHijoFin.setTime(fechaHijoFin.getTime() + fechaHijoFin.getTimezoneOffset() * 60 * 1000);
+              const fechaFin = moment(fechaHijoFin).format('YYYY-MM-DD HH:mm');
+
+              if (fechaInicio <= fechaActual && fechaActual <= fechaFin) {
+                reject('El proceso de publicación de materias para cursar la modalidad no se encuentra vigente.');
+              } else {
+                resolve();
+              }
+            } else {
+              reject('Actualmente no hay fechas para los procesos de la modalidad asociadas al periodo académico.');
+            }
+          }, error: () => {
+            reject('Ocurrió un error al cargar las fechas asociadas a los procesos de la modalidad, por favor verifique su conexión e intente de nuevo.');
+          }
+        });
+    });
   }
 
 }
