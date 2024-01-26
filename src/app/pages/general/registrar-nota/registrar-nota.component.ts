@@ -16,6 +16,8 @@ import { EstudianteTrabajoGrado } from 'src/app/shared/models/estudianteTrabajoG
 import { AcademicaService } from '../../services/academicaService';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { GestorDocumentalService } from '../../services/gestorDocumentalService';
+import { AlertService } from '../../services/alertService';
+import { DocumentoEscrito } from 'src/app/shared/models/documentoEscrito.model';
 
 @Component({
   selector: 'app-registrar-nota',
@@ -45,6 +47,7 @@ export class RegistrarNotaComponent implements OnInit {
     private academica: AcademicaService,
     private smartTable: SmartTableService,
     private gestorDocumental: GestorDocumentalService,
+    private alert: AlertService,
   ) {
     this.documento = this.userService.getDocumento();
     this.settings = this.getSettings;
@@ -54,32 +57,35 @@ export class RegistrarNotaComponent implements OnInit {
     this.consultarParametros();
   }
 
-  private async consultarParametros() {
+  private consultarParametros() {
     const payloadParametros = 'limit=0&query=TipoParametroId__CodigoAbreviacion__in:MOD_TRG|EST_TRG|ROL_TRG|EST_ESTU_TRG';
     const payloadTiposDocumento = 'limit=0&query=DominioTipoDocumento__CodigoAbreviacion:DOC_PLX';
 
     const parametros = firstValueFrom(this.parametrosCrud.get('parametro', payloadParametros));
     const tiposDocumento = firstValueFrom(this.documentosCrud.get('tipo_documento', payloadTiposDocumento));
 
-    const consultas = await Promise.all([parametros, tiposDocumento]);
-    this.parametros = consultas[0];
-    this.tiposDocumento = consultas[1];
-    this.cargarTrabajos();
+    Promise.all([parametros, tiposDocumento])
+      .then((consultas) => {
+        this.parametros = consultas[0];
+        this.tiposDocumento = consultas[1];
+        this.cargarTrabajos();
+      })
+      .catch((err) => { });
   }
 
   private cargarTrabajos() {
     const payloadVinculaciones = `limit=0&query=Activo:true,Usuario:${this.documento}`;
     this.poluxCrud.get('vinculacion_trabajo_grado', payloadVinculaciones)
-      .subscribe((respuestaVinculaciones: VinculacionTrabajoGrado[]) => {
-        respuestaVinculaciones.forEach((trabajoGrado: any) => {
-          trabajoGrado.RolTrabajoGrado = this.parametrosCrud.findParametro(trabajoGrado.RolTrabajoGrado, this.parametros)
-          trabajoGrado.EstadoTrabajoGrado = this.parametrosCrud.findParametro(trabajoGrado.TrabajoGrado.EstadoTrabajoGrado, this.parametros)
-          trabajoGrado.Modalidad = this.parametrosCrud.findParametro(trabajoGrado.TrabajoGrado.Modalidad, this.parametros)
-        });
-        this.trabajosGrado = respuestaVinculaciones;
+      .subscribe({
+        next: (respuestaVinculaciones: VinculacionTrabajoGrado[]) => {
+          respuestaVinculaciones.forEach((trabajoGrado: any) => {
+            trabajoGrado.RolTrabajoGrado = this.parametrosCrud.findParametro(trabajoGrado.RolTrabajoGrado, this.parametros)
+            trabajoGrado.EstadoTrabajoGrado = this.parametrosCrud.findParametro(trabajoGrado.TrabajoGrado.EstadoTrabajoGrado, this.parametros)
+            trabajoGrado.Modalidad = this.parametrosCrud.findParametro(trabajoGrado.TrabajoGrado.Modalidad, this.parametros)
+          });
+          this.trabajosGrado = respuestaVinculaciones;
+        }, error: (err) => { },
       });
-    // .catch(error)=> {
-    // }
   }
 
   private async cargarTrabajo(fila: any) {
@@ -167,14 +173,13 @@ export class RegistrarNotaComponent implements OnInit {
     // Se consultan las evaluaciones
     const payloadEvaluacion = `limit=1&query=VinculacionTrabajoGrado:${vinculacion.Id}`;
     this.poluxCrud.get('evaluacion_trabajo_grado', payloadEvaluacion)
-      .subscribe((responseEvaluacion) => {
-        if (responseEvaluacion.length > 0) {
-          this.trabajoSeleccionado.evaluacion = responseEvaluacion[0];
-        }
-      })
-    // .catch((error) => {
-    // });
-    return;
+      .subscribe({
+        next: (responseEvaluacion) => {
+          if (responseEvaluacion.length > 0) {
+            this.trabajoSeleccionado.evaluacion = responseEvaluacion[0];
+          }
+        }, error: (error) => { }
+      });
   }
 
   public registrarRespuesta() {
@@ -192,7 +197,7 @@ export class RegistrarNotaComponent implements OnInit {
         ],
         RevisionTrabajoGrado: {
           DocumentoTrabajoGrado: this.docTrabajoGrado,
-          VinculacionTrabajoGrado: this.trabajoSeleccionado.Id,
+          VinculacionTrabajoGrado: <VinculacionTrabajoGrado>{ Id: this.trabajoSeleccionado.Id },
         },
       };
 
@@ -210,15 +215,15 @@ export class RegistrarNotaComponent implements OnInit {
       if (this.trabajoSeleccionado.RolTrabajoGrado.CodigoAbreviacion === 'DIRECTOR_PLX') {
         this.subirActa();
       } else {
-        this.postNota();
+        this.postNota(null);
       }
     }
   }
 
-  private postNota() {
+  private postNota(documento: DocumentoEscrito | null) {
     const trRegistrarNota = {
       TrabajoGrado: this.trabajoSeleccionado.TrabajoGrado,
-      DocumentoEscrito: null,
+      DocumentoEscrito: documento,
       VinculacionTrabajoGrado: { Id: this.trabajoSeleccionado.Id },
       EvaluacionTrabajoGrado: {
         Id: 0,
@@ -228,12 +233,19 @@ export class RegistrarNotaComponent implements OnInit {
     };
 
     this.poluxCrud.post('tr_vinculado_registrar_nota', trRegistrarNota)
-      .subscribe((responseNota) => {
-        if (responseNota[0] === 'Success') {
-          // notificar
-        } else {
-          // alerta error();
-        }
+      .subscribe({
+        next: (responseNota) => {
+          if (responseNota[0] === 'Success') {
+            const text = 'Las calificaciones ingresadas han sido registradas con éxito.';
+            const title = 'Registro de calificaciones';
+            this.alert.success(text, title);
+          } else {
+            // alerta error(responseNota[1]);
+            this.alert.error('Ocurrió un error al registrar las calificaciones, por favor intente de nuevo.')
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error al registrar las calificaciones, por favor intente de nuevo.')
+        },
       });
   }
 
@@ -247,26 +259,29 @@ export class RegistrarNotaComponent implements OnInit {
     const nombre = `Acta de sustentación de trabajo id:  ${this.trabajoSeleccionado.TrabajoGrado.Id}`;
     const descripcion = `Acta de sustentación de el trabajo con id:${this.trabajoSeleccionado.TrabajoGrado.Id}, ` +
       `titulado:${this.trabajoSeleccionado.TrabajoGrado.Titulo}.`;
-    this.gestorDocumental.fileToBase64(this.notaForm?.value.acta)
-      .then((base64) => {
-        const data = [{
-          IdTipoDocumento: tipoDocumento.Id,
-          nombre,
-          metadatos: {
-            NombreArchivo: nombre,
-            Tipo: 'Archivo',
-            Observaciones: 'Acta de sustentación',
-          },
-          descripcion: descripcion,
-          file: base64,
-        }];
-
-        this.gestorDocumental.uploadFiles(data)
-          .subscribe((response) => {
-            this.postNota();
-          });
-        // .catch((error) => {
-        // });
+    const acta = [{
+      IdTipoDocumento: tipoDocumento.Id,
+      nombre,
+      Observaciones: 'Acta de sustentación',
+      descripcion: descripcion,
+      file: this.notaForm?.value.acta,
+    }];
+    this.gestorDocumental.uploadFiles(acta)
+      .subscribe({
+        next: (response) => {
+          if (response && Array.isArray(response) && response.length > 0 && response[0].res) {
+            const documento = <DocumentoEscrito>{
+              Id: 0,
+              Titulo: nombre,
+              Resumen: descripcion,
+              Enlace: response[0].res.Enlace,
+              TipoDocumentoEscrito: tipoDocumento.Id,
+            };
+            this.postNota(documento);
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error subiendo el acta de sustentación. Intente de nuevo.');
+        }
       });
   }
 
