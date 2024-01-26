@@ -40,6 +40,7 @@ export class AsignaturasPensumComponent implements OnChanges, OnInit, AfterViewI
     private academica: AcademicaService,
     private poluxCrud: PoluxCrudService,
     private poluxMid: PoluxMidService,
+    private altert: AlertService,
   ) { }
 
   ngOnChanges(changes: SimpleChanges): void {
