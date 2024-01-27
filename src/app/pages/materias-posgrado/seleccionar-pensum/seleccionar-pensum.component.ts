@@ -88,7 +88,7 @@ export class SeleccionarPensumComponent implements OnInit {
       this.academica.get('periodo_academico', 'X')
         .subscribe({
           next: (response: responsePeriodo) => {
-            if (response.periodoAcademicoCollection?.periodoAcademico.length) {
+            if (response.periodoAcademicoCollection?.periodoAcademico?.length) {
               this.periodo = response.periodoAcademicoCollection.periodoAcademico[0];
               resolve();
             } else {

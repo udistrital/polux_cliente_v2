@@ -1,45 +1,49 @@
-export type responsePeriodo = {
-    periodoAcademicoCollection: {
-        periodoAcademico: periodo[];
-    } | undefined
+export interface responsePeriodo {
+    periodoAcademicoCollection: { periodoAcademico: periodo[] | undefined };
 }
 
-export type periodo = {
+export interface periodo {
     anio: string;
     periodo: string;
 }
 
-export type responseCoordinadorCarrera = {
-    coordinadorCollection: {
-        coordinador: coordinador[];
-    } | undefined
+export interface responseCoordinadorCarrera {
+    coordinadorCollection: { coordinador: coordinador[] | undefined };
 }
 
-export type coordinador = {
+export interface coordinador {
     codigo_proyecto_curricular: string;
     nombre_coordinador: string;
     nombre_proyecto_curricular: string;
 }
 
-export type responsePensums = {
-    pensums: {
-        pensum: pensum[];
-    } | undefined
+export interface responsePensums {
+    pensums: { pensum: pensum[] | undefined }
 }
 
-export type pensum = {
+export interface pensum {
     pensum: string;
 }
 
-export type responseAsignatura = {
-    asignaturaCollection: {
-        asignatura: asignatura[];
-    } | undefined
+export interface responseAsignatura {
+    asignaturaCollection: { asignatura: asignatura[] | undefined };
 }
 
-export type asignatura = {
+export interface asignatura {
     codigo: string;
     creditos: string;
     nombre: string;
     semestre: string;
+}
+
+export interface responseDatosEstudiante {
+    datosEstudianteCollection: { datosBasicosEstudiante: datosEstudiante[] | undefined };
+}
+
+export interface datosEstudiante {
+    carrera: string;
+    codigo: string;
+    estado: string;
+    nombre: string;
+    pensum: string;
 }

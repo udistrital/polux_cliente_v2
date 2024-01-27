@@ -1,17 +1,19 @@
-<!-- <mat-spinner></mat-spinner> -->
 <mat-card>
     <mat-card-header>
         <mat-card-title>
             Registrar calificación de trabajos de grado
         </mat-card-title>
     </mat-card-header>
-    <mat-card-content *ngIf="!trabajoSeleccionado">
-        <angular2-smart-table [settings]="settings" [source]="trabajosGrado" (edit)="onRegistrar($event)"
-            (delete)="onVer($event)" (custom)="onDevolver($event)">
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+    <mat-card-content *ngIf="mensaje">
+        <p>{{mensaje}}</p>
+    </mat-card-content>
+    <mat-card-content *ngIf="!mensaje && !trabajoSeleccionado">
+        <angular2-smart-table *ngIf="!trabajoSeleccionado" [settings]="settings" [source]="trabajosGrado"
+            (edit)="onRegistrar($event)" (delete)="onVer($event)" (custom)="onDevolver($event)">
         </angular2-smart-table>
     </mat-card-content>
-
-    <mat-card-content *ngIf="trabajoSeleccionado">
+    <mat-card-content *ngIf="!mensaje && trabajoSeleccionado">
         <mat-card>
             <mat-card-header>
                 <mat-card-title>
@@ -39,9 +41,9 @@
                 </mat-card-title>
             </mat-card-header>
             <mat-card-content>
-                <div *ngFor="let estudiante of trabajoSeleccionado?.estudiantes">
-                    <p class="text-uppercase"><strong>Código: </strong>{{estudiante.datos?.codigo}}</p>
-                    <p class="text-uppercase"><strong>Nombre: </strong>{{estudiante.datos?.nombre}}</p>
+                <div *ngFor="let estudiante of estudiantes">
+                    <p class="text-uppercase"><strong>Código: </strong>{{estudiante.codigo}}</p>
+                    <p class="text-uppercase"><strong>Nombre: </strong>{{estudiante.nombre}}</p>
                 </div>
             </mat-card-content>
         </mat-card>
