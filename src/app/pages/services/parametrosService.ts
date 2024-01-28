@@ -39,7 +39,7 @@ export class ParametrosService {
     return obj;
   }
 
-  public findParametro(value: number, parametros: Parametro[]) {
+  public findParametro(value: number | Parametro, parametros: Parametro[]) {
     return parametros.find(parametro => value === parametro.Id) || new Parametro();
   }
 

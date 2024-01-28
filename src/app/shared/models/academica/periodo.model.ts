@@ -1,5 +1,5 @@
 export interface responsePeriodo {
-    periodoAcademicoCollection: { periodoAcademico: periodo[] | undefined };
+    periodoAcademicoCollection: { periodoAcademico: periodo[] } | undefined;
 }
 
 export interface periodo {
@@ -8,7 +8,7 @@ export interface periodo {
 }
 
 export interface responseCoordinadorCarrera {
-    coordinadorCollection: { coordinador: coordinador[] | undefined };
+    coordinadorCollection: { coordinador: coordinador[] } | undefined;
 }
 
 export interface coordinador {
@@ -18,7 +18,7 @@ export interface coordinador {
 }
 
 export interface responsePensums {
-    pensums: { pensum: pensum[] | undefined }
+    pensums: { pensum: pensum[] } | undefined;
 }
 
 export interface pensum {
@@ -26,7 +26,7 @@ export interface pensum {
 }
 
 export interface responseAsignatura {
-    asignaturaCollection: { asignatura: asignatura[] | undefined };
+    asignaturaCollection: { asignatura: asignatura[] } | undefined;
 }
 
 export interface asignatura {
@@ -37,7 +37,7 @@ export interface asignatura {
 }
 
 export interface responseDatosEstudiante {
-    datosEstudianteCollection: { datosBasicosEstudiante: datosEstudiante[] | undefined };
+    datosEstudianteCollection: { datosBasicosEstudiante: datosEstudiante[] } | undefined;
 }
 
 export interface datosEstudiante {
@@ -46,4 +46,22 @@ export interface datosEstudiante {
     estado: string;
     nombre: string;
     pensum: string;
+}
+
+export interface responseCarrera {
+    carrerasCollection: { carrera: carrera[] } | undefined;
+}
+
+export interface carrera {
+    codigo: string;
+    nombre: string;
+}
+
+export interface responseDocente {
+    docenteTg: { docente: docente[] } | undefined;
+}
+
+export interface docente {
+    id: string;
+    nombre: string;
 }

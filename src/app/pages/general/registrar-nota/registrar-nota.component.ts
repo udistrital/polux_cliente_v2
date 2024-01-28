@@ -187,7 +187,7 @@ export class RegistrarNotaComponent implements OnInit {
       this.academica.get('datos_basicos_estudiante', estudiante.Estudiante)
         .subscribe({
           next: (responseDatosBasicos: responseDatosEstudiante) => {
-            if (responseDatosBasicos.datosEstudianteCollection.datosBasicosEstudiante) {
+            if (responseDatosBasicos.datosEstudianteCollection?.datosBasicosEstudiante) {
               this.estudiantes.push(responseDatosBasicos.datosEstudianteCollection.datosBasicosEstudiante[0]);
               resolve();
             } else {
