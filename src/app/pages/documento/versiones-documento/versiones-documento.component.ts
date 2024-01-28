@@ -1,9 +1,8 @@
-import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { RequestManager } from 'src/app/core/manager/request.service';
-import { environment } from 'src/environments/environment';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
+import { PoluxCrudService } from '../../services/poluxCrudService';
 
 interface ExampleFlatNode {
   expandable: boolean;
@@ -16,7 +15,7 @@ interface ExampleFlatNode {
   templateUrl: './versiones-documento.component.html',
   styleUrls: ['./versiones-documento.component.scss']
 })
-export class VersionesDocumentoComponent implements OnInit, OnChanges {
+export class VersionesDocumentoComponent implements OnChanges {
   @Input() tiposDocumento: TipoDocumento[] = [];
   @Input() trabajoGradoId = 0;
 
@@ -45,39 +44,47 @@ export class VersionesDocumentoComponent implements OnInit, OnChanges {
   hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
   constructor(
-    private request: RequestManager,
+    private polux: PoluxCrudService,
   ) {
     this.sourceArbol.data = [];
   }
 
-  ngOnInit(): void {
-    this.cargarDocumentos();
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['trabajoGradoId'].firstChange) {
+    if (this.tiposDocumento.length > 0 && this.trabajoGradoId > 0) {
       this.cargarDocumentos();
     }
   }
 
   private cargarDocumentos() {
-    for (const tipoDocumento of this.tiposDocumento) {
-      const uri = `query=TrabajoGrado.Id:${this.trabajoGradoId},DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id}&limit=1`;
-      this.request.get(environment.POLUX_SERVICE, `documento_trabajo_grado?${uri}`)
-        .subscribe((respuestaDocumentos: any[]) => {
-          if (respuestaDocumentos.length) {
-            const node: any = {};
-            if (tipoDocumento.CodigoAbreviacion === 'DTR_PLX') {
-              node.name = 'Trabajo de Grado';
-            } else if (tipoDocumento.CodigoAbreviacion === 'DGRREV_PLX') {
-              node.name = 'Trabajo de Grado para Revisión';
-            }
+    const tiposDocumento = this.tiposDocumento
+      .filter(tipo => ['DTR_PLX', 'DGRREV_PLX'].includes(tipo.CodigoAbreviacion));
 
-            respuestaDocumentos.forEach(doc => doc.name = doc.DocumentoEscrito.Titulo);
-            node.children = respuestaDocumentos;
-            this.sourceArbol.data = [node];
+    const uri = `limit=-1&query=TrabajoGrado.Id:${this.trabajoGradoId},` +
+      `DocumentoEscrito.TipoDocumentoEscrito.in:` +
+      `${tiposDocumento.map(tipo => tipo.Id).join('|')}`;
+    this.polux.get('documento_trabajo_grado', uri)
+      .subscribe({
+        next: (respuestaDocumentos: any[]) => {
+          if (respuestaDocumentos.length) {
+            respuestaDocumentos.forEach((doc: any) => doc.name = doc.DocumentoEscrito.Titulo);
+            const nodes = [];
+            for (const tipoDocumento of tiposDocumento) {
+              const node: any = {};
+              if (tipoDocumento.CodigoAbreviacion === 'DTR_PLX') {
+                node.name = 'Trabajo de Grado';
+              } else if (tipoDocumento.CodigoAbreviacion === 'DGRREV_PLX') {
+                node.name = 'Trabajo de Grado para Revisión';
+              }
+
+              node.children = respuestaDocumentos
+                .filter((doc) => doc.DocumentoEscrito.TipoDocumentoEscrito === tipoDocumento.Id);
+              nodes.push(node);
+            }
+            this.sourceArbol.data = nodes;
           }
-        });
-    }
+        }, error: () => {
+
+        }
+      });
   }
 }

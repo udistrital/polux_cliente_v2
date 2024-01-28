@@ -3,7 +3,6 @@ import { VinculacionTrabajoGrado, VinculacionTrabajoGradoDetalle, VinculacionTra
 import { UserService } from '../../services/userService';
 import { DocumentoTrabajoGrado } from 'src/app/shared/models/documentoTrabajoGrado.model';
 import { GestorDocumentalService } from '../../services/gestorDocumentalService';
-import { DomSanitizer } from '@angular/platform-browser';
 import { ParametrosService } from '../../services/parametrosService';
 import { Parametro } from 'src/app/shared/models/parametro.model';
 import { firstValueFrom } from 'rxjs';
@@ -16,6 +15,7 @@ import { EstudianteTrabajoGrado } from 'src/app/shared/models/estudianteTrabajoG
 import { DocumentoCrudService } from '../../services/documentoCrudService';
 import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
 import { ActivatedRoute } from '@angular/router';
+import { AlertService } from '../../services/alertService';
 
 @Component({
   selector: 'app-lista-trabajos',
@@ -36,7 +36,7 @@ export class ListaTrabajosComponent implements OnInit {
 
   codigoEstudiante = '';
   documento = '';
-  trabajoSeleccionadoId = 0;
+  trabajoId = 0;
 
   doc: any;
   nuevoDocumento: File = new File([], '');
@@ -49,8 +49,8 @@ export class ListaTrabajosComponent implements OnInit {
     private parametros: ParametrosService,
     private academica: AcademicaService,
     private documentosCrud: DocumentoCrudService,
-    private sanitization: DomSanitizer,
     private route: ActivatedRoute,
+    private alert: AlertService,
   ) {
     this.documento = this.userService.getDocumento();
     this.codigoEstudiante = this.userService.getCodigo();
@@ -67,6 +67,9 @@ export class ListaTrabajosComponent implements OnInit {
         }
       }
     });
+    return
+    this.trabajoSeleccionadoId = 263;
+    this.consultarRevisionesTrabajoGrado()
   }
 
   private async getParametrosDocente() {
@@ -118,8 +121,12 @@ export class ListaTrabajosComponent implements OnInit {
 
   private getEstadosEstudiante(): Promise<void> {
     return new Promise(async (resolve, reject) => {
-      this.estadosEstudiante = await firstValueFrom(this.parametros.getAllParametroByTipo('EST_ESTU_TRG'));
-      resolve();
+      firstValueFrom(this.parametros.getAllParametroByTipo('EST_ESTU_TRG'))
+        .then((estados) => {
+          this.estadosEstudiante = estados;
+          resolve();
+        })
+        .catch(() => reject('Error'));
     });
   }
 
@@ -160,32 +167,30 @@ export class ListaTrabajosComponent implements OnInit {
   }
 
   public subirVersion() {
-    const descripcion = 'Versión nueva del trabajo de grado';
     const tipoDocumento = this.tiposDocumento.find(tipoDoc => tipoDoc.CodigoAbreviacion === 'DTR_PLX');
     if (!tipoDocumento) {
       return;
     }
 
-    this.gestorDocumental.fileToBase64(this.nuevoDocumento)
-      .then((base64) => {
-        const fileBase64 = base64;
-        const data = [{
-          IdTipoDocumento: tipoDocumento.Id,
-          nombre: this.trabajoGrado.Titulo,
-          metadatos: {
-            NombreArchivo: this.trabajoGrado.Titulo + ': ' + this.codigoEstudiante,
-            Tipo: 'Archivo',
-            Observaciones: 'Nueva version trabajo ' + this.trabajoGrado.Titulo
-          },
-          descripcion: descripcion,
-          file: fileBase64,
-        }];
+    const descripcion = 'Versión nueva del trabajo de grado';
+    const nombre = `${this.trabajoGrado.Titulo}: ${this.codigoEstudiante}`;
+    const documento = {
+      descripcion,
+      file: this.nuevoDocumento,
+      IdTipoDocumento: tipoDocumento.Id,
+      nombre,
+      Observaciones: 'Nueva version trabajo ' + this.trabajoGrado.Titulo,
+    };
 
-        this.gestorDocumental.uploadFiles(data)
-          .subscribe((response) => {
-            const URL = response[0].data.res.Enlace
-            this.actualizarDocumentoTrabajoGrado(URL);
-          });
+    this.gestorDocumental.uploadFiles([documento])
+      .subscribe({
+        next: (response) => {
+          if (response && Array.isArray(response) && response.length > 0 && response[0].res) {
+            this.actualizarDocumentoTrabajoGrado(response[0].res.Enlace);
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error subiendo la nueva versión del trabajo de grado. Intente de nuevo.');
+        }
       });
   }
 
@@ -235,7 +240,7 @@ export class ListaTrabajosComponent implements OnInit {
   private consultarDocumentoTrabajoGrado() {
     this.doc = '';
     this.revisionesTrabajoGrado = [];
-    if (this.trabajoSeleccionadoId === 0) {
+    if (this.trabajoId === 0) {
       return;
     }
 
@@ -244,14 +249,14 @@ export class ListaTrabajosComponent implements OnInit {
       return;
     }
 
-    const uri = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado.Id:${this.trabajoSeleccionadoId}&limit=0`;
+    const uri = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado.Id:${this.trabajoId}&limit=0`;
     this.poluxCrud.get('documento_trabajo_grado', uri)
       .subscribe((respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
       });
   }
 
   private consultarRevisionesTrabajoGrado() {
-    const uri = `query=DocumentoTrabajoGrado.TrabajoGrado.Id:${this.trabajoSeleccionadoId}&limit=0`;
+    const uri = `query=DocumentoTrabajoGrado.TrabajoGrado.Id:${this.trabajoId}&limit=0`;
     this.poluxCrud.get('revision_trabajo_grado', uri)
       .subscribe((respuestaRevisionesTrabajoGrado: RevisionTrabajoGrado[]) => {
         if (respuestaRevisionesTrabajoGrado.length) {
@@ -382,12 +387,12 @@ export class ListaTrabajosComponent implements OnInit {
       return;
     }
 
-    const uri = `limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:${idsEstados.join('|')}` +
+    const uri = `limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:${idsEstados.join('|')}`; +
       `,EstadoEstudianteTrabajoGrado:${estadoEstudianteTrabajoGrado.Id},Estudiante:${this.codigoEstudiante}`;
     this.poluxCrud.get('estudiante_trabajo_grado', uri)
       .subscribe(async (estudiante: EstudianteTrabajoGrado[]) => {
         if (estudiante.length) {
-          this.trabajoSeleccionadoId = estudiante[0].TrabajoGrado.Id;
+          this.trabajoId = estudiante[0].TrabajoGrado.Id;
           this.consultarRevisionesTrabajoGrado();
           await Promise.all([
             this.consultarInformacionAcademicaDelEstudiante(),
