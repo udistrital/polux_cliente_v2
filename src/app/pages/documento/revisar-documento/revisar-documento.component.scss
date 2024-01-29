@@ -6,3 +6,10 @@
 .form-field {
     flex: 1;
 }
+
+.two-buttons-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}

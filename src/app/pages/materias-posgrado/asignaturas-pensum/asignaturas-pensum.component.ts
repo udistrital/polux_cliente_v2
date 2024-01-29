@@ -190,7 +190,12 @@ export class AsignaturasPensumComponent implements OnChanges, OnInit, AfterViewI
       this.poluxCrud.post('tr_publicar_asignaturas', transaccion)
         .subscribe({
           next: () => {
+            const text = 'Los espacios académicos seleccionados podrán ser elegidos por los estudiantes para optar por la modalidad de trabajo de grado';
+            const title = 'Espacios Académicos Guardados';
+            this.altert.success(text, title);
           }, error: () => {
+            const text = 'Ocurrió un error al guardar los espacios academicos elegibles, por favor intente de nuevo.';
+            this.altert.error(text);
           }
         });
     }

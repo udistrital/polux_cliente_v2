@@ -5,7 +5,8 @@
     </mat-card-title>
   </mat-card-header>
   <mat-card-content>
-    <mat-card *ngIf="modo === 'DOCENTE'">
+    <p *ngIf="mensaje">{{mensaje}}</p>
+    <mat-card *ngIf="modo === 'DOCENTE' && !mensaje">
       <mat-card-header>
         <mat-card-title>
           Trabajos de grado asociados
@@ -27,11 +28,7 @@
       </mat-card-content>
     </mat-card>
 
-    <app-versiones-documento *ngIf="trabajoSeleccionadoId > 0" [tiposDocumento]="tiposDocumento"
-      [trabajoGradoId]="trabajoSeleccionadoId">
-    </app-versiones-documento>
-
-    <mat-card *ngIf="trabajoId > 0">
+    <mat-card *ngIf="trabajoId > 0 && !mensaje">
       <app-versiones-documento [tiposDocumento]="tiposDocumento" [trabajoGradoId]="trabajoId">
       </app-versiones-documento>
 
@@ -64,12 +61,13 @@
                     Fecha Recepción: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
                 </p>
 
-                <app-revisar-documento [revision]="revision" [estadosRevisiones]="estadosRevision" *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
+                <app-revisar-documento [autor]="nombreUsuario" [revision]="revision" [estadosRevisiones]="parametros" [tipoDocumentoId]="tipoDocumentoRevision"
+                    *ngIf="revision.VinculacionTrabajoGrado.Usuario.toString() === documento &&
                     (revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'PENDIENTE_PLX' ||
                     revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'BORRADOR_PLX')">
                 </app-revisar-documento>
 
-                <app-ver-revision [revision]="revision"
+                <app-ver-revision [revision]="revision" [autor]="nombreUsuario"
                   *ngIf="revision.EstadoRevisionTrabajoGrado.CodigoAbreviacion === 'FINALIZADA_PLX'">
                 </app-ver-revision>
                 <br>
@@ -80,7 +78,7 @@
       </div>
     </mat-card>
 
-    <mat-card *ngIf="modo === 'ESTUDIANTE'">
+    <mat-card *ngIf="modo === 'ESTUDIANTE' && !mensaje">
       <mat-card-header>
         <mat-card-title>
           Acciones

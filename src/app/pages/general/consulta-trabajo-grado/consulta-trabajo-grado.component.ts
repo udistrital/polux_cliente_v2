@@ -334,7 +334,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
         return;
       }
 
-      const payloadActaSocializacion = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado?.Id}&limit=1`;
+      const payloadActaSocializacion = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
       this.poluxCrud.get('documento_trabajo_grado', payloadActaSocializacion)
         .subscribe({
           next: (responseActaSocializacion: DocumentoTrabajoGrado[]) => {
@@ -352,7 +352,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   private getVinculaciones(): Promise<void> {
     // Se consultan los vinculados
     return new Promise((resolve, reject) => {
-      const payloadVinculados = `query=Activo:True,TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadVinculados = `query=Activo:True,TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('vinculacion_trabajo_grado', payloadVinculados)
         .subscribe({
           next: async (responseVinculados: any[]) => {
@@ -385,7 +385,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
 
   private getExterno(vinculacion: VinculacionTrabajoGradoDetalle): Promise<void> {
     return new Promise((resolve, reject) => {
-      const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('detalle_pasantia', payloadVinculado)
         .subscribe({
           next: (dataExterno: DetallePasantia[]) => {
@@ -452,7 +452,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
 
   private cargarAreasConocimiento(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const payloadAreas = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadAreas = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('areas_trabajo_grado', payloadAreas)
         .subscribe({
           next: (responseAreasConocimiento: AreasTrabajoGrado[]) => {
@@ -470,7 +470,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   private getEspaciosAcademicosInscritos(): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      const payloadEspaciosAcademicosInscritos = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadEspaciosAcademicosInscritos = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('espacio_academico_inscrito', payloadEspaciosAcademicosInscritos)
         .subscribe({
           next: async (responseEspacios) => {
@@ -521,7 +521,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
         return;
       }
 
-      var payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado?.Id}&limit: 0`;
+      var payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit: 0`;
       this.poluxCrud.get('documento_trabajo_grado', payloadActas)
         .subscribe({
           next: (responseActas: DocumentoTrabajoGrado[]) => {
@@ -536,7 +536,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
 
   private getDetallePasantia(): Promise<void> {
     return new Promise((resolve, reject) => {
-      var payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=1`;
+      var payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
       this.poluxCrud.get('detalle_pasantia', payloadPasantia)
         .subscribe({
           next: (responsePasantia: DetallePasantia[]) => {

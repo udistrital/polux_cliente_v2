@@ -16,6 +16,8 @@ import { DocumentoCrudService } from '../../services/documentoCrudService';
 import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
 import { ActivatedRoute } from '@angular/router';
 import { AlertService } from '../../services/alertService';
+import { datosEstudiante, responseDocente } from 'src/app/shared/models/academica/periodo.model';
+import { DocumentoEscrito } from 'src/app/shared/models/documentoEscrito.model';
 
 @Component({
   selector: 'app-lista-trabajos',
@@ -27,26 +29,30 @@ export class ListaTrabajosComponent implements OnInit {
   trabajosDirigidos: VinculacionTrabajoGradoDetalle[] = [];
   revisionesTrabajoGrado: RevisionTrabajoGradoDetalle[] = [];
 
-  estadosTrabajoGrado: Parametro[] = [];
-  rolesTrabajoGrado: Parametro[] = [];
-  modalidades: Parametro[] = [];
-  estadosRevision: Parametro[] = [];
-  estadosEstudiante: Parametro[] = [];
+  parametros: Parametro[] = [];
   tiposDocumento: TipoDocumento[] = [];
+  tipoDocumentoRevision = 0;
 
   codigoEstudiante = '';
+  nombreUsuario = '';
   documento = '';
   trabajoId = 0;
 
   doc: any;
   nuevoDocumento: File = new File([], '');
   revisorId = 0;
+  trabajoGrado: TrabajoGrado | undefined;
+  vinculados: VinculacionTrabajoGradoNombre[] = [];
+  informacionAcademica: datosEstudiante | undefined;
+  documentoEscrito: DocumentoTrabajoGrado = new DocumentoTrabajoGrado;
+
+  mensaje = '';
 
   constructor(
     private userService: UserService,
     private poluxCrud: PoluxCrudService,
     private gestorDocumental: GestorDocumentalService,
-    private parametros: ParametrosService,
+    private parametrosCrud: ParametrosService,
     private academica: AcademicaService,
     private documentosCrud: DocumentoCrudService,
     private route: ActivatedRoute,
@@ -57,108 +63,121 @@ export class ListaTrabajosComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.data.subscribe((data: any) => {
-      if (data && data.modo) {
-        this.modo = data.modo;
-        if (this.modo === 'DOCENTE') {
-          this.getParametrosDocente();
-        } else {
-          this.getParametrosEstudiante();
+    this.route.data
+      .subscribe(async (data: any) => {
+        if (data && data.modo && ['DOCENTE', 'ESTUDIANTE'].includes(data.modo)) {
+          this.modo = data.modo;
+          await Promise.all([
+            this.getParametros(),
+            this.getTipoDocumento(),
+          ])
+            .then(([parametros, tiposDocumento]) => {
+              this.parametros = parametros;
+              this.tiposDocumento = tiposDocumento;
+              this.tipoDocumentoRevision = this.tiposDocumento.find(td => td.CodigoAbreviacion === 'DGRREV_PLX')?.Id || 0;
+            })
+            .catch(() => {
+              this.mensaje = 'Ocurrió un error consultando los datos del trabajo de grado. Intente de nuevo.';
+            });
+
+          if (this.modo === 'DOCENTE') {
+            this.getParametrosDocente();
+          } else {
+            this.getParametrosEstudiante();
+          }
         }
-      }
-    });
-    return
-    this.trabajoSeleccionadoId = 263;
-    this.consultarRevisionesTrabajoGrado()
+      });
   }
 
-  private async getParametrosDocente() {
-    await Promise.all([
-      this.getEstadosTrabajoGrado(),
-      this.getRolesTrabajoGrado(),
-      this.getModalidades(),
-      this.getEstadosRevision(),
-      this.getTipoDocumento(),
-    ]);
-    this.consultarVinculacionTrabajoGrado();
-  }
+  private getParametrosEstudiante() {
+    const estadosValidos = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX', 'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX',
+      'ASMO_PLX', 'ASNV_PLX', 'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX'];
 
-  private getEstadosTrabajoGrado(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.estadosTrabajoGrado = await firstValueFrom(this.parametros.getAllParametroByTipo('EST_TRG'));
-      resolve();
-    });
-  }
+    const idsEstados: number[] = this.parametros
+      .filter(estado => estadosValidos.includes(estado.CodigoAbreviacion))
+      .map(estadoValido => estadoValido.Id);
+    const estadoEstudiante = this.parametros
+      .find(estEstTrGr => estEstTrGr.CodigoAbreviacion === 'EST_ACT_PLX');
 
-  private getRolesTrabajoGrado(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.rolesTrabajoGrado = await firstValueFrom(this.parametros.getAllParametroByTipo('ROL_TRG'));
-      resolve();
-    });
-  }
-
-  private getModalidades(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.modalidades = await firstValueFrom(this.parametros.getAllParametroByTipo('MOD_TRG'));
-      resolve();
-    });
-  }
-
-  private getEstadosRevision(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      this.estadosRevision = await firstValueFrom(this.parametros.getAllParametroByTipo('ESTREV_TRG'));
-      resolve();
-    });
-  }
-
-  private getTipoDocumento(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      const uri = 'query=DominioTipoDocumento__CodigoAbreviacion:DOC_PLX&limit=0';
-      this.tiposDocumento = await firstValueFrom(this.documentosCrud.get('tipo_documento', uri));
-      resolve();
-    });
-  }
-
-  private getEstadosEstudiante(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
-      firstValueFrom(this.parametros.getAllParametroByTipo('EST_ESTU_TRG'))
-        .then((estados) => {
-          this.estadosEstudiante = estados;
-          resolve();
-        })
-        .catch(() => reject('Error'));
-    });
-  }
-
-  private consultarVinculacionTrabajoGrado(): void {
-    if (!this.documento.length) {
-      // alert no documento
+    if (!estadoEstudiante || !estadosValidos.length) {
+      this.mensaje = 'Ocurrió un error consultando los datos del trabajo de grado. Intente de nuevo.';
       return;
     }
 
-    const estadosValidos = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX', 'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX', 'ASMO_PLX',
-      'ASNV_PLX', 'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX', 'PAEA_PLX', 'PECSPR_PLX'];
-    const rolesValidos = ['DIRECTOR_PLX', 'CODIRECTOR_PLX'];
-
-    const idsEstados: number[] = this.estadosTrabajoGrado
-      .filter(estado => estadosValidos.includes(estado.CodigoAbreviacion))
-      .map(estadoValido => estadoValido.Id);
-
-    const idsRoles: number[] = this.rolesTrabajoGrado
-      .filter(rol => rolesValidos.includes(rol.CodigoAbreviacion))
-      .map(rolValido => rolValido.Id);
-
-    const uri = 'limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:' + idsEstados.join('|')
-      + ',RolTrabajoGrado.in:' + idsRoles.join('|')
-      + ',Activo:true,Usuario:' + this.documento;
-
-    this.poluxCrud.get('vinculacion_trabajo_grado', uri)
-      .subscribe((respuestaVinculaciones: VinculacionTrabajoGrado[]) => {
-        this.trabajosDirigidos = respuestaVinculaciones
-          .map((rev) => this.parametros.fillPropiedad(rev, 'RolTrabajoGrado', this.rolesTrabajoGrado))
-          .map((rev) => this.parametros.fillPropiedad(rev, 'TrabajoGrado.EstadoTrabajoGrado', this.rolesTrabajoGrado))
-          .map((rev) => this.parametros.fillPropiedad(rev, 'TrabajoGrado.Modalidad', this.modalidades));
+    const uri = `limit=0&query=Estudiante:${this.codigoEstudiante}` +
+      `,TrabajoGrado.EstadoTrabajoGrado.in:${idsEstados.join('|')}` +
+      `,EstadoEstudianteTrabajoGrado:${estadoEstudiante.Id}`;
+    this.poluxCrud.get('estudiante_trabajo_grado', uri)
+      .subscribe({
+        next: (estudiante: EstudianteTrabajoGrado[]) => {
+          if (estudiante.length) {
+            this.trabajoId = estudiante[0].TrabajoGrado.Id;
+            this.trabajoId = 84;
+            Promise.all([
+              this.consultarRevisionesTrabajoGrado(),
+              this.consultarInformacionAcademicaDelEstudiante(),
+              this.consultarDocumentoTrabajoGradoEst(),
+              this.consultarVinculacionTrabajoGrado(),
+            ])
+              .catch((err) => this.mensaje = err);
+          } else {
+            this.mensaje = 'No hay información estudiantil asociada a los trabajos de grado consultados.';
+          }
+        }, error: () => {
+          this.mensaje = 'No hay información estudiantil asociada a los trabajos de grado consultados.';
+        }
       });
+  }
+
+  private getParametrosDocente() {
+    Promise.all([this.getInfoDocente(), this.consultarVinculacionesTrabajoGrado()])
+      .catch(err => this.mensaje = err);
+  }
+
+  private getParametros(): Promise<Parametro[]> {
+    const tipoParametros = 'EST_TRG|ROL_TRG|MOD_TRG|ESTREV_TRG|EST_ESTU_TRG';
+    return firstValueFrom(this.parametrosCrud.getAllParametroByTipo(tipoParametros));
+  }
+
+  private getTipoDocumento(): Promise<TipoDocumento[]> {
+    const uri = 'query=DominioTipoDocumento__CodigoAbreviacion:DOC_PLX&limit=0';
+    return firstValueFrom(this.documentosCrud.get('tipo_documento', uri));
+  }
+
+  private consultarVinculacionesTrabajoGrado(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.documento.length) {
+        reject('No se pueden consultar los trabajos de grado asociados. Contacte soporte.');
+        return;
+      }
+
+      const estadosValidos = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX', 'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX', 'ASMO_PLX',
+        'ASNV_PLX', 'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX', 'PAEA_PLX', 'PECSPR_PLX'];
+      const rolesValidos = ['DIRECTOR_PLX', 'CODIRECTOR_PLX'];
+
+      const idsEstados: number[] = this.parametros
+        .filter(estado => estadosValidos.includes(estado.CodigoAbreviacion))
+        .map(estadoValido => estadoValido.Id);
+
+      const idsRoles: number[] = this.parametros
+        .filter(rol => rolesValidos.includes(rol.CodigoAbreviacion))
+        .map(rolValido => rolValido.Id);
+
+      const uri = 'limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:' + idsEstados.join('|')
+        + ',RolTrabajoGrado.in:' + idsRoles.join('|')
+        + ',Activo:true,Usuario:' + this.documento;
+
+      this.poluxCrud.get('vinculacion_trabajo_grado', uri)
+        .subscribe({
+          next: (respuestaVinculaciones: VinculacionTrabajoGrado[]) => {
+            this.trabajosDirigidos = respuestaVinculaciones
+              .map((rev) => this.parametrosCrud.fillPropiedad(rev, 'RolTrabajoGrado', this.parametros))
+              .map((rev) => this.parametrosCrud.fillPropiedad(rev, 'TrabajoGrado.EstadoTrabajoGrado', this.parametros))
+              .map((rev) => this.parametrosCrud.fillPropiedad(rev, 'TrabajoGrado.Modalidad', this.parametros));
+            resolve();
+          }, error: () => reject('Ocurrió un error al consultar los trabajos de grado asociados.'),
+        });
+    });
   }
 
   public consultarTrabajoGrado() {
@@ -173,13 +192,13 @@ export class ListaTrabajosComponent implements OnInit {
     }
 
     const descripcion = 'Versión nueva del trabajo de grado';
-    const nombre = `${this.trabajoGrado.Titulo}: ${this.codigoEstudiante}`;
+    const nombre = `${this.trabajoGrado?.Titulo}: ${this.codigoEstudiante}`;
     const documento = {
       descripcion,
       file: this.nuevoDocumento,
       IdTipoDocumento: tipoDocumento.Id,
       nombre,
-      Observaciones: 'Nueva version trabajo ' + this.trabajoGrado.Titulo,
+      Observaciones: 'Nueva version trabajo ' + this.trabajoGrado?.Titulo,
     };
 
     this.gestorDocumental.uploadFiles([documento])
@@ -195,23 +214,26 @@ export class ListaTrabajosComponent implements OnInit {
   }
 
   private actualizarDocumentoTrabajoGrado(nuevoEnlace: string) {
-    this.trabajoGrado.documentoEscrito.Enlace = nuevoEnlace;
-    this.poluxCrud.put('documento_escrito', this.trabajoGrado.documentoEscrito.Id, this.trabajoGrado.documentoEscrito)
-      .subscribe((respuestaActualizarDocumento) => {
-        if (Array.isArray(respuestaActualizarDocumento) &&
-          respuestaActualizarDocumento.length === 1 && respuestaActualizarDocumento[0] === 'Success') {
-          // alerta ok
-        } else {
-          // alerta error
-        }
+    this.documentoEscrito.DocumentoEscrito.Enlace = nuevoEnlace;
+    this.poluxCrud.put('documento_escrito', this.documentoEscrito.Id, this.documentoEscrito)
+      .subscribe({
+        next: (respuestaActualizarDocumento) => {
+          if (Array.isArray(respuestaActualizarDocumento) &&
+            respuestaActualizarDocumento.length === 1 && respuestaActualizarDocumento[0] === 'Success') {
+            this.alert.success('El documento ha sido actualizado.')
+          } else {
+            this.alert.error('Ocurrió un error subiendo la nueva versión del trabajo de grado. Intente de nuevo.')
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error subiendo la nueva versión del trabajo de grado. Intente de nuevo.');
+        },
       });
   }
 
   public solicitarRevision() {
-    const estadoRevisionTrabajoGrado = this.estadosRevision.find(estado => estado.CodigoAbreviacion == 'PENDIENTE_PLX');
+    const estadoRevisionTrabajoGrado = this.parametros.find(estado => estado.CodigoAbreviacion === 'PENDIENTE_PLX');
     if (!estadoRevisionTrabajoGrado) {
-      // alerta no estado
-      // notificacion
+      this.alert.error('Ocurrió un error al intentar solicitar la revisión. Intente de nuevo.');
       return;
     }
 
@@ -220,7 +242,7 @@ export class ListaTrabajosComponent implements OnInit {
       FechaRecepcion: new Date(),
       EstadoRevisionTrabajoGrado: estadoRevisionTrabajoGrado.Id,
       DocumentoTrabajoGrado: {
-        Id: this.trabajoGrado.documentoEscrito.Id,
+        Id: this.documentoEscrito.Id,
       },
       VinculacionTrabajoGrado: {
         Id: this.revisorId,
@@ -228,126 +250,155 @@ export class ListaTrabajosComponent implements OnInit {
     };
 
     this.poluxCrud.post('revision_trabajo_grado', nuevaRevision)
-      .subscribe((respuesta) => {
-        if (Array.isArray(respuesta) && respuesta.length === 1 && respuesta[0] === 'Success') {
-          // alerta ok
-        } else {
-          // alerta error
-        }
-      });
-  }
-
-  private consultarDocumentoTrabajoGrado() {
-    this.doc = '';
-    this.revisionesTrabajoGrado = [];
-    if (this.trabajoId === 0) {
-      return;
-    }
-
-    const tipoDocumento = this.tiposDocumento.find(tipoDoc => tipoDoc.CodigoAbreviacion === 'DTR_PLX');
-    if (!tipoDocumento) {
-      return;
-    }
-
-    const uri = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado.Id:${this.trabajoId}&limit=0`;
-    this.poluxCrud.get('documento_trabajo_grado', uri)
-      .subscribe((respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
-      });
-  }
-
-  private consultarRevisionesTrabajoGrado() {
-    const uri = `query=DocumentoTrabajoGrado.TrabajoGrado.Id:${this.trabajoId}&limit=0`;
-    this.poluxCrud.get('revision_trabajo_grado', uri)
-      .subscribe((respuestaRevisionesTrabajoGrado: RevisionTrabajoGrado[]) => {
-        if (respuestaRevisionesTrabajoGrado.length) {
-          this.doc = respuestaRevisionesTrabajoGrado[0].DocumentoTrabajoGrado.DocumentoEscrito.Enlace;
-          this.revisionesTrabajoGrado = respuestaRevisionesTrabajoGrado
-            .map((rev) => this.parametros.fillPropiedad(rev, 'EstadoRevisionTrabajoGrado', this.estadosRevision));
-        }
-      });
-  }
-
-  trabajoGrado: any = {};
-  vinculados: VinculacionTrabajoGradoNombre[] = [];
-  informacionAcademica: any = {};
-
-  private consultarDocumentoTrabajoGradoEst(trabajoGrado: TrabajoGrado): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const estadoTrabajoGrado = this.estadosTrabajoGrado.find(estado => estado.Id === trabajoGrado.EstadoTrabajoGrado);
-      const tipoDocumento = this.tiposDocumento.find(tipoDoc => tipoDoc.CodigoAbreviacion === 'DTR_PLX');
-      if (!tipoDocumento || !estadoTrabajoGrado) {
-        reject('No tipo documento');
-        return;
-      }
-
-      const estadoTrabajoGradoAceptada = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX',
-        'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX', 'ASMO_PLX', 'PAEA_PLX', 'PECSPR_PLX',
-        'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX'];
-      const tipoDocumentoId = estadoTrabajoGradoAceptada.includes(estadoTrabajoGrado.CodigoAbreviacion) ? tipoDocumento.Id : 0;
-      if (tipoDocumentoId === 0) {
-        reject('No tipo documento');
-        return;
-      }
-
-      const uri = `limit=1&query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumentoId},TrabajoGrado.Id:${trabajoGrado.Id}`;
-      this.poluxCrud.get('documento_trabajo_grado', uri)
-        .subscribe((respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
-          if (respuestaDocumentoTrabajoGrado.length > 0) {
-            this.trabajoGrado.documentoEscrito = respuestaDocumentoTrabajoGrado[0].DocumentoEscrito;
-            resolve();
+      .subscribe({
+        next: (respuesta: RevisionTrabajoGrado) => {
+          if (respuesta && respuesta.Id > 0) {
+            this.alert.success('Revisión solicitada exitosamente.')
           } else {
-            reject('No documento en trabajo de grado');
+            this.alert.error('Ocurrió un error al intentar solicitar la revisión');
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error al intentar solicitar la revisión');
+        },
+      })
+  }
+
+  private consultarDocumentoTrabajoGrado(): Promise<void> {
+    this.doc = '';
+    return new Promise((resolve, reject) => {
+      if (this.trabajoId === 0) {
+        resolve();
+        return;
+      }
+
+      const tipoDocumento = this.tiposDocumento.find(tipoDoc => tipoDoc.CodigoAbreviacion === 'DTR_PLX');
+      if (!tipoDocumento) {
+        reject('No tipo documento');
+        return;
+      }
+
+      const uri = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado.Id:${this.trabajoId}&limit=0`;
+      this.poluxCrud.get('documento_trabajo_grado', uri)
+        .subscribe({
+          next: (respuestaDocumentoTrabajoGrado: DocumentoTrabajoGrado[]) => {
+            if (respuestaDocumentoTrabajoGrado.length > 0) {
+              this.documentoEscrito = respuestaDocumentoTrabajoGrado[0];
+              resolve();
+            } else {
+              reject('No documento en trabajo de grado');
+            }
+          }, error: () => {
+            reject('Ocurrió un error al consultar el documento del trabajo de grado. Intente de nuevo.');
+          }
+        });
+    })
+  }
+
+  private consultarRevisionesTrabajoGrado(): Promise<void> {
+    this.revisionesTrabajoGrado = [];
+    const uri = `query=DocumentoTrabajoGrado.TrabajoGrado.Id:${this.trabajoId}&limit=0`;
+    return new Promise((resolve, reject) => {
+      this.poluxCrud.get('revision_trabajo_grado', uri)
+        .subscribe({
+          next: (respuestaRevisionesTrabajoGrado: RevisionTrabajoGrado[]) => {
+            if (respuestaRevisionesTrabajoGrado.length) {
+              this.doc = respuestaRevisionesTrabajoGrado[0].DocumentoTrabajoGrado.DocumentoEscrito.Enlace;
+              this.revisionesTrabajoGrado = respuestaRevisionesTrabajoGrado
+                .map((rev) => this.parametrosCrud.fillPropiedad(rev, 'EstadoRevisionTrabajoGrado', this.parametros));
+            }
+            resolve();
+          }, error: () => {
+            reject('Ocurrió un error consultando las revisiones del trabajo de grado. Intente de nuevo.');
           }
         });
     });
   }
 
-  private consultarVinculacionTrabajoGradoEst(trabajoGrado: TrabajoGrado): Promise<void> {
+
+  private consultarDocumentoTrabajoGradoEst(): Promise<void> {
+    // Verificar si el filtro es necesario
+    // const estadoTrabajoGrado = this.parametros.find(estado => estado.Id === this.trabajoGrado.EstadoTrabajoGrado);
+    // const estadoTrabajoGradoAceptada = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX',
+    //   'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX', 'ASMO_PLX', 'PAEA_PLX', 'PECSPR_PLX',
+    //   'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX'];
+    // estadoTrabajoGradoAceptada.includes(estadoTrabajoGrado.CodigoAbreviacion)
+    return this.consultarDocumentoTrabajoGrado();
+  }
+
+  private consultarVinculacionTrabajoGrado(): Promise<void> {
     return new Promise((resolve, reject) => {
       const consultasVinculados: any[] = [];
-      const uri = `query=Activo:true,TrabajoGrado.Id:${trabajoGrado.Id}&limit=0`;
+      const uri = `query=Activo:true,TrabajoGrado.Id:${this.trabajoId}&limit=0`;
       this.poluxCrud.get('vinculacion_trabajo_grado', uri)
-        .subscribe(async (respuestaVinculaciones: VinculacionTrabajoGradoNombre[]) => {
-          if (respuestaVinculaciones.length) {
-            respuestaVinculaciones.forEach(vinculacionTrabajoGrado => {
-              const rolTrabajoGrado = this.rolesTrabajoGrado.find(rol => rol.Id === vinculacionTrabajoGrado.RolTrabajoGrado);
-              if (!rolTrabajoGrado) {
-                reject('Rol no registrado');
-                return;
-              }
+        .subscribe({
+          next: async (respuestaVinculaciones: VinculacionTrabajoGradoNombre[]) => {
+            if (respuestaVinculaciones.length) {
+              respuestaVinculaciones.forEach(vinculacionTrabajoGrado => {
+                const rolTrabajoGrado = this.parametros.find(rol => rol.Id === vinculacionTrabajoGrado.RolTrabajoGrado);
+                if (!rolTrabajoGrado) {
+                  reject('Rol no registrado');
+                  return;
+                }
 
-              if (rolTrabajoGrado.CodigoAbreviacion === 'DIR_EXTERNO_PLX') {
-                consultasVinculados.push(this.consultarDirectorExterno(vinculacionTrabajoGrado));
-              } else {
-                consultasVinculados.push(this.consultarDocenteTrabajoGrado(vinculacionTrabajoGrado));
-              }
-            });
-            await Promise.all(consultasVinculados);
-            this.vinculados = respuestaVinculaciones.filter(vinculacion => vinculacion.Nombre !== '');
-            resolve();
-          }
-        })
+                if (rolTrabajoGrado.CodigoAbreviacion === 'DIR_EXTERNO_PLX') {
+                  consultasVinculados.push(this.consultarDirectorExterno(vinculacionTrabajoGrado));
+                } else {
+                  consultasVinculados.push(this.consultarDocenteTrabajoGrado(vinculacionTrabajoGrado));
+                }
+              });
+
+              await Promise.all(consultasVinculados);
+              this.vinculados = respuestaVinculaciones.filter(vinculacion => vinculacion.Nombre !== '');
+              resolve();
+            }
+          }, error() {
+          },
+        });
     })
   }
 
   private consultarDirectorExterno(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre) {
     this.poluxCrud.get('detalle_pasantia', `query=TrabajoGrado.Id:${vinculacionTrabajoGrado.TrabajoGrado.Id}&limit=1`)
-      .subscribe((docenteExterno: DetallePasantia[]) => {
-        if (docenteExterno.length > 0) {
-          let resultadoDocenteExterno = docenteExterno[0].Observaciones.split(' y dirigida por ');
-          resultadoDocenteExterno = resultadoDocenteExterno[1].split(' con número de identificacion ');
-          vinculacionTrabajoGrado.Nombre = resultadoDocenteExterno[0];
-        }
+      .subscribe({
+        next: (docenteExterno: DetallePasantia[]) => {
+          if (docenteExterno.length > 0) {
+            let resultadoDocenteExterno = docenteExterno[0].Observaciones.split(' y dirigida por ');
+            resultadoDocenteExterno = resultadoDocenteExterno[1].split(' con número de identificacion ');
+            vinculacionTrabajoGrado.Nombre = resultadoDocenteExterno[0];
+          }
+        }, error() {
+        },
       });
+  }
+
+  private getInfoDocente(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.academica.get('docente_tg', this.documento)
+        .subscribe({
+          next: (docenteDirector: responseDocente) => {
+            if (docenteDirector.docenteTg?.docente) {
+              this.nombreUsuario = docenteDirector.docenteTg.docente[0].nombre;
+              resolve();
+            } else {
+              reject('No existe información relacionada con los docentes asociados al trabajo de grado.');
+            }
+          }, error() {
+            reject('Ocurrió un error al intentar consultar los docentes de los trabajos de grado consultados. Comuníquese con el administrador.');
+          },
+        });
+    });
   }
 
   private consultarDocenteTrabajoGrado(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre) {
     this.academica.get('docente_tg', `${vinculacionTrabajoGrado.Usuario}`)
-      .subscribe((docenteDirector) => {
-        if (docenteDirector.docenteTg.docente) {
-          vinculacionTrabajoGrado.Nombre = docenteDirector.docenteTg.docente[0].nombre;
-        }
-      })
+      .subscribe({
+        next: (docenteDirector: responseDocente) => {
+          if (docenteDirector.docenteTg?.docente) {
+            vinculacionTrabajoGrado.Nombre = docenteDirector.docenteTg.docente[0].nombre;
+          }
+        }, error() {
+        },
+      });
   }
 
   private consultarInformacionAcademicaDelEstudiante(): Promise<void> {
@@ -355,53 +406,22 @@ export class ListaTrabajosComponent implements OnInit {
       this.academica.getPeriodoAnterior()
         .then((periodoAcademicoPrevio) => {
           this.academica.get('datos_estudiante', `${this.codigoEstudiante}/${periodoAcademicoPrevio.anio}/${periodoAcademicoPrevio.periodo}`)
-            .subscribe((estudianteConsultado) => {
-              resolve();
-              if (estudianteConsultado.estudianteCollection.datosEstudiante) {
-                this.informacionAcademica = estudianteConsultado.estudianteCollection.datosEstudiante[0];
+            .subscribe({
+              next: (estudianteConsultado) => {
+                if (estudianteConsultado.estudianteCollection.datosEstudiante) {
+                  this.informacionAcademica = estudianteConsultado.estudianteCollection.datosEstudiante[0];
+                  this.nombreUsuario = estudianteConsultado.estudianteCollection.datosEstudiante[0].nombre;
+                  resolve();
+                } else {
+                  reject('Ocurrió un error consultando los datos del estudiante. Intente de nuevo');
+                }
+              }, error: () => {
+                reject('Ocurrió un error consultando los datos del estudiante. Intente de nuevo');
               }
             });
-        });
-    })
-  }
-
-  private async getParametrosEstudiante() {
-    await Promise.all([
-      this.getEstadosTrabajoGrado(),
-      this.getRolesTrabajoGrado(),
-      this.getEstadosRevision(),
-      this.getTipoDocumento(),
-      this.getEstadosEstudiante(),
-    ]);
-
-    const estadosValidos = ['APR_PLX', 'RVS_PLX', 'AVI_PLX', 'AMO_PLX', 'SRV_PLX', 'SRVS_PLX', 'ASVI_PLX',
-      'ASMO_PLX', 'ASNV_PLX', 'EC_PLX', 'PR_PLX', 'ER_PLX', 'MOD_PLX', 'LPS_PLX', 'STN_PLX', 'NTF_PLX'];
-
-    const idsEstados: number[] = this.estadosTrabajoGrado
-      .filter(estado => estadosValidos.includes(estado.CodigoAbreviacion))
-      .map(estadoValido => estadoValido.Id);
-    const estadoEstudianteTrabajoGrado = this.estadosEstudiante.find(estEstTrGr => estEstTrGr.CodigoAbreviacion === 'EST_ACT_PLX');
-
-    if (!estadoEstudianteTrabajoGrado) {
-      // alert no estado estudiante
-      return;
-    }
-
-    const uri = `limit=0&query=TrabajoGrado.EstadoTrabajoGrado.in:${idsEstados.join('|')}`; +
-      `,EstadoEstudianteTrabajoGrado:${estadoEstudianteTrabajoGrado.Id},Estudiante:${this.codigoEstudiante}`;
-    this.poluxCrud.get('estudiante_trabajo_grado', uri)
-      .subscribe(async (estudiante: EstudianteTrabajoGrado[]) => {
-        if (estudiante.length) {
-          this.trabajoId = estudiante[0].TrabajoGrado.Id;
-          this.consultarRevisionesTrabajoGrado();
-          await Promise.all([
-            this.consultarInformacionAcademicaDelEstudiante(),
-            this.consultarDocumentoTrabajoGradoEst(estudiante[0].TrabajoGrado),
-            this.consultarVinculacionTrabajoGradoEst(estudiante[0].TrabajoGrado),
-          ]);
-        }
-      })
-
+        })
+        .catch((err) => reject(err));
+    });
   }
 
 }

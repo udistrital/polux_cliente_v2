@@ -5,15 +5,14 @@
                 CORRECCIÓN
             </mat-panel-title>
         </mat-expansion-panel-header>
-
-        <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
-            <button type="button" (click)="descargarArchivo(correccion.Correccion.Observacion)" mat-raised-button
-                color="primary">Ver Adjunto</button>
+        <div *ngIf="correccion.Correccion.EnlaceDocumento" style="padding-bottom: 0.5rem;">
+            <button type="button" mat-raised-button (click)="descargarArchivo(correccion.Correccion.EnlaceDocumento)"
+                color="primary"><mat-icon>cloud_download</mat-icon>Ver Adjunto</button>
         </div>
         <mat-expansion-panel *ngFor="let comentario of correccion.Comentarios">
             <mat-expansion-panel-header>
                 <mat-panel-title>
-                    {{!correccion.Correccion.Documento ? correccion.Correccion.Observacion : ''}}
+                    {{comentario.Comentario}}
                 </mat-panel-title>
             </mat-expansion-panel-header>
             <div>
@@ -24,13 +23,15 @@
             </div>
         </mat-expansion-panel>
         <mat-card>
-            <mat-form-field>
-                <mat-label>Nuevo Comentario</mat-label>
-                <textarea matInput [(ngModel)]="correccion.NuevoComentario"></textarea>
-            </mat-form-field>
+            <mat-card-content>
+                <mat-form-field style="width: 100%;">
+                    <mat-label>Nuevo Comentario</mat-label>
+                    <textarea matInput [(ngModel)]="correccion.NuevoComentario"></textarea>
+                </mat-form-field>
+            </mat-card-content>
             <mat-card-actions align="end">
                 <button type="button" [disabled]="!correccion.NuevoComentario.length"
-                    (click)="postComentario(correccion)" mat-raised-button color="primary">Publicar</button>
+                    (click)="postComentario(correccion)" mat-raised-button color="primary">PUBLICAR</button>
             </mat-card-actions>
         </mat-card>
     </mat-expansion-panel>

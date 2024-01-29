@@ -5,8 +5,8 @@ export class Correccion {
 	Observacion!: string;
 	Pagina!: number;
 	RevisionTrabajoGrado!: RevisionTrabajoGrado;
-	Documento!: boolean;
 	EnlaceDocumento!: string;
+	Archivo!: File;
 }
 
 export class CorreccionDetalle extends Correccion {
