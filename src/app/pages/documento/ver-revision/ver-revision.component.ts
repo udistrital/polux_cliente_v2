@@ -24,7 +24,7 @@ export class VerRevisionComponent implements OnInit {
 
   correcciones: Correccion[] = [];
   comentariosCorreccion: ComentariosCorreccion[] = [];
-  nuevoComentario: string = '';
+  nuevoComentario = '';
 
   constructor(
     private polux: PoluxCrudService,

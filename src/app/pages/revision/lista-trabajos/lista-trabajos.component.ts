@@ -327,7 +327,7 @@ export class ListaTrabajosComponent implements OnInit {
 
   private consultarVinculacionTrabajoGrado(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const consultasVinculados: any[] = [];
+      const consultasVinculados: Promise<void>[] = [];
       const uri = `query=Activo:true,TrabajoGrado.Id:${this.trabajoId}&limit=0`;
       this.poluxCrud.get('vinculacion_trabajo_grado', uri)
         .subscribe({
@@ -352,23 +352,28 @@ export class ListaTrabajosComponent implements OnInit {
               resolve();
             }
           }, error() {
+            reject('Ocurrió un error al consultar los vinculados al trabajo de grado.');
           },
         });
     })
   }
 
-  private consultarDirectorExterno(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre) {
-    this.poluxCrud.get('detalle_pasantia', `query=TrabajoGrado.Id:${vinculacionTrabajoGrado.TrabajoGrado.Id}&limit=1`)
-      .subscribe({
-        next: (docenteExterno: DetallePasantia[]) => {
-          if (docenteExterno.length > 0) {
-            let resultadoDocenteExterno = docenteExterno[0].Observaciones.split(' y dirigida por ');
-            resultadoDocenteExterno = resultadoDocenteExterno[1].split(' con número de identificacion ');
-            vinculacionTrabajoGrado.Nombre = resultadoDocenteExterno[0];
-          }
-        }, error() {
-        },
-      });
+  private consultarDirectorExterno(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.poluxCrud.get('detalle_pasantia', `query=TrabajoGrado.Id:${vinculacionTrabajoGrado.TrabajoGrado.Id}&limit=1`)
+        .subscribe({
+          next: (docenteExterno: DetallePasantia[]) => {
+            if (docenteExterno.length > 0) {
+              let resultadoDocenteExterno = docenteExterno[0].Observaciones.split(' y dirigida por ');
+              resultadoDocenteExterno = resultadoDocenteExterno[1].split(' con número de identificacion ');
+              vinculacionTrabajoGrado.Nombre = resultadoDocenteExterno[0];
+            }
+            resolve();
+          }, error() {
+            reject('No se pudo cargar la información del director externo. Intente de nuevo.');
+          },
+        });
+    });
   }
 
   private getInfoDocente(): Promise<void> {
@@ -389,16 +394,20 @@ export class ListaTrabajosComponent implements OnInit {
     });
   }
 
-  private consultarDocenteTrabajoGrado(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre) {
-    this.academica.get('docente_tg', `${vinculacionTrabajoGrado.Usuario}`)
-      .subscribe({
-        next: (docenteDirector: responseDocente) => {
-          if (docenteDirector.docenteTg?.docente) {
-            vinculacionTrabajoGrado.Nombre = docenteDirector.docenteTg.docente[0].nombre;
-          }
-        }, error() {
-        },
-      });
+  private consultarDocenteTrabajoGrado(vinculacionTrabajoGrado: VinculacionTrabajoGradoNombre): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.academica.get('docente_tg', `${vinculacionTrabajoGrado.Usuario}`)
+        .subscribe({
+          next: (docenteDirector: responseDocente) => {
+            if (docenteDirector.docenteTg?.docente) {
+              vinculacionTrabajoGrado.Nombre = docenteDirector.docenteTg.docente[0].nombre;
+            }
+            resolve();
+          }, error() {
+            reject('No se pudo cargar la información de los docentes del trabajo de grado. Intente de nuevo.');
+          },
+        });
+    });
   }
 
   private consultarInformacionAcademicaDelEstudiante(): Promise<void> {

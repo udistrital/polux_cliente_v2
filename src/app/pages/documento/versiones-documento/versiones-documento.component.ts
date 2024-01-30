@@ -3,6 +3,7 @@ import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree'
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { TipoDocumento } from 'src/app/shared/models/tipoDocumento.model';
 import { PoluxCrudService } from '../../services/poluxCrudService';
+import { DocumentoTrabajoGrado } from 'src/app/shared/models/documentoTrabajoGrado.model';
 
 interface ExampleFlatNode {
   expandable: boolean;
@@ -64,7 +65,7 @@ export class VersionesDocumentoComponent implements OnChanges {
       `${tiposDocumento.map(tipo => tipo.Id).join('|')}`;
     this.polux.get('documento_trabajo_grado', uri)
       .subscribe({
-        next: (respuestaDocumentos: any[]) => {
+        next: (respuestaDocumentos: DocumentoTrabajoGrado[]) => {
           if (respuestaDocumentos.length) {
             respuestaDocumentos.forEach((doc: any) => doc.name = doc.DocumentoEscrito.Titulo);
             const nodes = [];

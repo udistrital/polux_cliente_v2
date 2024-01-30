@@ -26,7 +26,7 @@ type TrRevision = {
 export class RevisarDocumentoComponent {
   @Input() revision: RevisionTrabajoGradoDetalle = new RevisionTrabajoGradoDetalle();
   @Input() estadosRevisiones: Parametro[] = [];
-  @Input() tipoDocumentoId: number = 0;
+  @Input() tipoDocumentoId = 0;
   @Input() autor = '';
   @Output() volver = new EventEmitter<void>();
 
@@ -64,7 +64,7 @@ export class RevisarDocumentoComponent {
       return;
     }
 
-    const promesasAdjuntos: Promise<any>[] = []
+    const promesasAdjuntos: Promise<void>[] = []
     this.comentariosCorreccion.forEach((comentarioCorreccion, i) => {
       if (comentarioCorreccion.Correccion.Archivo) {
         const nombre = 'Archivo adjunto corrección de trabajo de grado.';

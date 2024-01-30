@@ -1,5 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 import { Injectable } from '@angular/core';
+import { Menu } from 'src/app/shared/models/configuracion/menuOpcion.model';
 
 @Injectable({
   providedIn: 'root',
@@ -8,7 +9,7 @@ export class UserService {
   private userSubject = new BehaviorSubject({});
   public user$ = this.userSubject.asObservable();
   public user: any = {};
-  public permisos: any[] = [];
+  public permisos: Menu[] = [];
 
   private permisosSubject = new BehaviorSubject({});
   public permisos$ = this.permisosSubject.asObservable();

@@ -86,9 +86,9 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     this.parametros = consultas[0];
     this.tiposDocumento = consultas[1];
 
-    if (!!this.userService.findAction('verTodosTrabajos')) {
+    if (this.userService.findAction('verTodosTrabajos')) {
       this.showForm = true;
-    } else if (!!this.userService.findAction('verTrabajoPropio')) {
+    } else if (this.userService.findAction('verTrabajoPropio')) {
       this.codigo = this.userService.getCodigo();
       this.cargarTrabajo();
     }
@@ -133,7 +133,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             const estado = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.EstadoTrabajoGrado, this.parametros);
             const modalidad = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.Modalidad, this.parametros);
 
-            if (!!this.userService.findAction('verTrabajoPropio')) { // ctrl.userRole.includes('ESTUDIANTE')
+            if (this.userService.findAction('verTrabajoPropio')) {
               this.esAnteproyectoModificable = ['AMO_PLX', 'ASMO_PLX'].includes(estado.CodigoAbreviacion);
 
               // Si el anteproyecto es viable se puede subir la primera versión del proyecto
@@ -384,13 +384,13 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
 
 
   private getExterno(vinculacion: VinculacionTrabajoGradoDetalle): Promise<void> {
+    const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
     return new Promise((resolve, reject) => {
-      const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('detalle_pasantia', payloadVinculado)
         .subscribe({
           next: (dataExterno: DetallePasantia[]) => {
             if (dataExterno.length > 0) {
-              var temp = dataExterno[0].Observaciones.split(' y dirigida por ');
+              let temp = dataExterno[0].Observaciones.split(' y dirigida por ');
               temp = temp[1].split(' con número de identificacion ');
               vinculacion.Nombre = temp[0];
               resolve();
@@ -513,15 +513,15 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   }
 
   private getActas(): Promise<void> {
+    const tipoDocumento = this.tiposDocumento.find(p => p.CodigoAbreviacion === 'ACT_PLX');
     return new Promise((resolve, reject) => {
       // Se buscan los documentos de tipo acta de seguimiento
-      const tipoDocumento = this.tiposDocumento.find(p => p.CodigoAbreviacion === 'ACT_PLX');
       if (!tipoDocumento) {
         reject('No se pudieron consultar los documentos asociados al trabajo de grado.');
         return;
       }
 
-      var payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit: 0`;
+      const payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit: 0`;
       this.poluxCrud.get('documento_trabajo_grado', payloadActas)
         .subscribe({
           next: (responseActas: DocumentoTrabajoGrado[]) => {
@@ -535,8 +535,8 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   }
 
   private getDetallePasantia(): Promise<void> {
+    const payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
     return new Promise((resolve, reject) => {
-      var payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
       this.poluxCrud.get('detalle_pasantia', payloadPasantia)
         .subscribe({
           next: (responsePasantia: DetallePasantia[]) => {

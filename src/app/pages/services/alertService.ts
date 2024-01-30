@@ -6,8 +6,6 @@ import Swal from 'sweetalert2';
 })
 export class AlertService {
 
-    constructor() { }
-
     input(titulo: string, etiqueta: string): Promise<any> {
         return Swal.fire({
             title: titulo,

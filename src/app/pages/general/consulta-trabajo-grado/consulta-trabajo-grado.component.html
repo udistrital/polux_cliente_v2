@@ -25,6 +25,8 @@
         </div>
 
         <div *ngIf="!mensaje && estudiantes?.length">
+            <app-versiones-documento [tiposDocumento]="tiposDocumento" [trabajoGradoId]="trabajoGrado.Id">
+            </app-versiones-documento>
             <mat-card>
                 <mat-card-header>
                     <mat-card-title>

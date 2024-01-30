@@ -100,8 +100,8 @@ export class AsignaturasPensumComponent implements OnChanges, OnInit, AfterViewI
           next: (response) => {
             if (response.length > 0) {
               const codigos = asignaturas.map(as => as.codigo);
-              var parametros = `query=Activo:true,CarreraElegible:${response[0].Id},CodigoAsignatura__in:${codigos.join('|')}`;
-              this.poluxCrud.get('espacios_academicos_elegibles', parametros)
+              const payloadEspacios = `query=Activo:true,CarreraElegible:${response[0].Id},CodigoAsignatura__in:${codigos.join('|')}`;
+              this.poluxCrud.get('espacios_academicos_elegibles', payloadEspacios)
                 .subscribe({
                   next: (response: EspaciosAcademicosElegibles[]) => {
                     this.dataSource.data = asignaturas.map(asignatura => {
