@@ -4,6 +4,7 @@
             Consultar trabajo grado
         </mat-card-title>
     </mat-card-header>
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
     <mat-card-content>
         <mat-card *ngIf="showForm">
             <mat-card-content style="width: 100%;">
@@ -14,19 +15,18 @@
                 </mat-form-field>
             </mat-card-content>
             <mat-card-actions align="end">
-                <button mat-raised-button type="button" color="primary" [disabled]="!codigo.length" (click)="cargarTrabajo()">
+                <button mat-raised-button type="button" color="primary" [disabled]="codigo.length !== 11" (click)="verificarEstudiante()">
                     CONSULTAR
                 </button>
             </mat-card-actions>
         </mat-card>
-
-        <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
-
         <div *ngIf="mensaje">
             <p>{{mensaje}}</p>
         </div>
 
         <div *ngIf="!mensaje && estudiantes?.length">
+            <app-versiones-documento [tiposDocumento]="tiposDocumento" [trabajoGradoId]="trabajoGrado.Id">
+            </app-versiones-documento>
             <mat-card>
                 <mat-card-header>
                     <mat-card-title>
@@ -51,8 +51,8 @@
                 </mat-card-header>
                 <mat-card-content>
                     <p class="text-uppercase"><strong>Nombre: </strong>{{trabajoGrado.Titulo}}</p>
-                    <p class="text-uppercase"><strong>Modalidad: </strong>{{trabajoGrado.Modalidad?.Nombre}}</p>
-                    <p class="text-uppercase"><strong>Estado: </strong>{{trabajoGrado.EstadoTrabajoGrado?.Nombre}}</p>
+                    <p class="text-uppercase"><strong>Modalidad: </strong>{{trabajoGrado.Modalidad.Nombre}}</p>
+                    <p class="text-uppercase"><strong>Estado: </strong>{{trabajoGrado.EstadoTrabajoGrado.Nombre}}</p>
                     <p class="text-uppercase"><strong>Periodo: </strong>{{trabajoGrado.PeriodoAcademico}}</p>
                     <div>
                         <p class="text-uppercase"><strong>Areas de Conocimiento: </strong></p>

@@ -22,10 +22,13 @@ export class VerDocumentoComponent implements OnInit {
     if (this.enlace) {
       this.gestorDocumental.getByEnlace(this.enlace)
         .subscribe(async (respuestaDocumento) => {
-          const url = await this.gestorDocumental.getUrlFile(respuestaDocumento.file, respuestaDocumento['file:content']['mime-type']);
-          if (url) {
-            this.doc = this.sanitization.bypassSecurityTrustResourceUrl(url.toString());
-          }
+          this.gestorDocumental
+            .getUrlFile(respuestaDocumento.file, respuestaDocumento['file:content']['mime-type'])
+            .then((url) => {
+              if (url) {
+                this.doc = this.sanitization.bypassSecurityTrustResourceUrl(url.toString());
+              }
+            });
         });
     }
   }

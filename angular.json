@@ -17,6 +17,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "allowedCommonJsDependencies": [
+              "moment",
+              "sweetalert2"
+            ],
             "outputPath": "dist/polux_cliente_v2",
             "index": "src/index.html",
             "main": "src/main.ts",

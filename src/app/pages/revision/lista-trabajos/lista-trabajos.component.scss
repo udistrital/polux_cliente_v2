@@ -1,3 +1,13 @@
+.container-documento {
+    flex: 1;
+    min-width: 480px;
+}
+
+.container-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .flex-container-row {
     display: flex;
     flex-direction: row;

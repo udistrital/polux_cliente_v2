@@ -9,11 +9,6 @@
             <cite>Fecha de Recepción: {{revision.FechaRecepcion | date:'dd-MMM-yyyy'}}</cite>
         </p>
 
-        <!-- <div *ngIf="correccion.Correccion.Documento && correccion.Correccion.Observacion" style="padding-bottom: 1REM;">
-            <button type="button" (click)="descargarArchivo(correccion.Correccion.Observacion)" mat-raised-button
-                color="primary">{{'VER_ADJUNTO'}}</button>
-        </div> -->
-        <br>
         <mat-expansion-panel [expanded]="true" *ngFor="let correccion of comentariosCorreccion; let i = index">
             <mat-expansion-panel-header style="display: flex;">
                 <mat-panel-title>
@@ -24,19 +19,19 @@
                 </button>
             </mat-expansion-panel-header>
             <mat-card>
-                <mat-form-field appearance="outline">
+                <mat-form-field>
                     <mat-label>Enunciado</mat-label>
                     <input type="text" matInput [(ngModel)]="correccion.Correccion.Observacion">
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                    <ngx-mat-file-input placeholder="Seleccionar Archivo"
-                        [ngModel]="correccion.Correccion.Observacion" [accept]="'.pdf'">
+                <mat-form-field>
+                    <ngx-mat-file-input placeholder="Seleccionar Archivo" [accept]="'.pdf'"
+                        [(ngModel)]="correccion.Correccion.Archivo">
                     </ngx-mat-file-input>
                 </mat-form-field>
 
                 <div class="container-flex-row" *ngFor="let comentario of correccion.Comentarios; let j = index">
-                    <mat-form-field appearance="outline" class="form-field">
+                    <mat-form-field class="form-field">
                         <mat-label>Comentario</mat-label>
                         <textarea matInput [(ngModel)]="comentario.Comentario"></textarea>
                     </mat-form-field>
@@ -46,15 +41,15 @@
                 </div>
                 <mat-card-actions align="end">
                     <button type="button" [disabled]="" (click)="agregarComentario(i)" mat-raised-button
-                        color="primary">Nuevo Comentario</button>
+                        color="primary">NUEVO COMENTARIO</button>
                 </mat-card-actions>
             </mat-card>
         </mat-expansion-panel>
-        <mat-card-actions>
-            <button type="button" (click)="agregarCorreccion()" mat-raised-button
-                color="primary">Nueva Corrección</button>
+        <mat-card-actions class="two-buttons-container">
+            <button type="button" (click)="agregarCorreccion()" mat-raised-button color="primary">
+                NUEVA CORRECCIÓN</button>
             <button type="button" (click)="postRevision()" mat-raised-button color="primary">
-                Enviar Revisión</button>
+                ENVIAR REVISIÓN</button>
         </mat-card-actions>
     </mat-expansion-panel>
 </mat-accordion>

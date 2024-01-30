@@ -4,6 +4,7 @@ import { RevisionTrabajoGradoDetalle } from 'src/app/shared/models/revisionTraba
 import { PoluxCrudService } from '../../services/poluxCrudService';
 import { Comentario } from 'src/app/shared/models/comentario.model';
 import { GestorDocumentalService } from '../../services/gestorDocumentalService';
+import { AlertService } from '../../services/alertService';
 
 type ComentariosCorreccion = {
   Comentarios: Comentario[];
@@ -19,14 +20,16 @@ type ComentariosCorreccion = {
 
 export class VerRevisionComponent implements OnInit {
   @Input() revision: RevisionTrabajoGradoDetalle = new RevisionTrabajoGradoDetalle;
+  @Input() autor = '';
 
   correcciones: Correccion[] = [];
   comentariosCorreccion: ComentariosCorreccion[] = [];
-  nuevoComentario: string = '';
+  nuevoComentario = '';
 
   constructor(
     private polux: PoluxCrudService,
     private gestorDocumental: GestorDocumentalService,
+    private alert: AlertService,
   ) { }
 
   ngOnInit(): void {
@@ -69,18 +72,22 @@ export class VerRevisionComponent implements OnInit {
       Id: 0,
       Comentario: correccion.NuevoComentario,
       Fecha: new Date(),
-      Autor: 'Un autor',
+      Autor: this.autor,
       Correccion: <Correccion>{ Id: correccion.Correccion.Id },
     }
 
     correccion.NuevoComentario = '';
     this.polux.post('comentario', nuevoComentario)
-      .subscribe((responseNuevoComentario: Comentario) => {
-        if (responseNuevoComentario.Id > 0) {
-          correccion.Comentarios.push(nuevoComentario);
-        } else {
-          // alerta comentario no registrado
-        }
+      .subscribe({
+        next: (responseNuevoComentario: Comentario) => {
+          if (responseNuevoComentario && responseNuevoComentario.Id > 0) {
+            correccion.Comentarios.push(nuevoComentario);
+          } else {
+            this.alert.error('Ocurrió un error al registrar el comentario. Intente de nuevo.');
+          }
+        }, error: () => {
+          this.alert.error('Ocurrió un error al registrar el comentario. Intente de nuevo.');
+        },
       });
   }
 

@@ -130,7 +130,7 @@ export class FormSolicitudComponent implements OnInit {
               { Id: 9, estado, Nombre: 'SIN CLASIFICAR' }
             ];
             //  coreAmazonCrudService.get('snies_area').then(function(responseAreas) {
-            //      var areasSnies = responseAreas;
+            //      let areasSnies = responseAreas;
             if (Object.keys(areasSnies[0]).length > 0) {
               this.areas.forEach((area) => {
                 areasSnies.forEach((areaSnies) => {
@@ -219,7 +219,7 @@ export class FormSolicitudComponent implements OnInit {
             resolve();
           } else if (detalle.Detalle.Nombre.includes('Areas de conocimiento actuales')) {
             //
-            var areasString = '';
+            let areasString = '';
             responseOpciones.forEach((area: any) => {
               areasString = areasString + ', ' + area.AreaConocimiento.Nombre;
             });
@@ -281,7 +281,7 @@ export class FormSolicitudComponent implements OnInit {
           } else if (detalle.Detalle.Nombre.includes('Espacio Academico Nuevo')) {
             const promises: any[] = [];
             responseOpciones.forEach((espacio: any) => {
-              var esta = false;
+              let esta = false;
               this.espaciosElegidos.forEach((asignatura) => {
                 if (espacio.CodigoAsignatura === asignatura.CodigoAsignatura) {
                   esta = true;
@@ -373,23 +373,23 @@ export class FormSolicitudComponent implements OnInit {
         detalle.respuesta = '';
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Directiva') {
-        if (detalle.Detalle.Descripcion == 'solicitar-asignaturas') {
-          detalle.respuesta = 'JSON';
-          this.estudiante.asignaturas_elegidas.forEach((asignatura: any) => {
-            asignatura.$$hashKey = undefined;
-            detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(asignatura);
-          });
-        }
-        if (detalle.Detalle.Descripcion == 'asignar-estudiantes') {
-          detalle.respuesta = (!this.estudiantes.length) ? this.codigo : this.codigo + ',' + this.estudiantes.toString();
-        }
-        if (detalle.Detalle.Descripcion == 'asignar-area') {
-          detalle.respuesta = 'JSON';
-          this.estudiante.areas_elegidas.forEach((area: any) => {
-            area.$$hashKey = undefined;
-            detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(area);
-          });
-        }
+        // if (detalle.Detalle.Descripcion == 'solicitar-asignaturas') {
+        //   detalle.respuesta = 'JSON';
+        //   this.estudiante.asignaturas_elegidas.forEach((asignatura: any) => {
+        //     asignatura.$$hashKey = undefined;
+        //     detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(asignatura);
+        //   });
+        // }
+        // if (detalle.Detalle.Descripcion == 'asignar-estudiantes') {
+        //   detalle.respuesta = (!this.estudiantes.length) ? this.codigo : this.codigo + ',' + this.estudiantes.toString();
+        // }
+        // if (detalle.Detalle.Descripcion == 'asignar-area') {
+        //   detalle.respuesta = 'JSON';
+        //   this.estudiante.areas_elegidas.forEach((area: any) => {
+        //     area.$$hashKey = undefined;
+        //     detalle.respuesta = detalle.respuesta + '-' + JSON.stringify(area);
+        //   });
+        // }
       }
       if (detalle.Detalle.TipoDetalle.Nombre === 'Checkbox' || detalle.Detalle.TipoDetalle.Nombre === 'Radio') {
 
@@ -433,7 +433,7 @@ export class FormSolicitudComponent implements OnInit {
         //   'warning'
         // );
         //
-        this.erroresFormulario = true;
+        // this.erroresFormulario = true;
       }
       if (detalle.Detalle.Descripcion == 'solicitar-asignaturas' && !this.estudiante.minimoCreditos) {
         // swal(
@@ -513,9 +513,9 @@ export class FormSolicitudComponent implements OnInit {
             //Se evalua si el detalle necesita cargar datos
             if (!detalle.Detalle.Descripcion.includes('no_service') && detalle.Detalle.TipoDetalle.Id !== 8) {
               //Se separa el strig
-              var parametrosServicio = detalle.Detalle.Descripcion.split(';');
-              var sql = '';
-              var parametrosConsulta: any[] = [];
+              let parametrosServicio = detalle.Detalle.Descripcion.split(';');
+              let sql = '';
+              let parametrosConsulta: any[] = [];
               //servicio de academiaca
               if (parametrosServicio[0] === 'polux') {
                 promises.push(this.getOpcionesPolux(detalle, parametrosServicio, parametrosConsulta, sql));
@@ -619,7 +619,7 @@ export class FormSolicitudComponent implements OnInit {
         this.request.get(environment.ACADEMICA_SERVICE, `docentes_tg`)
           .subscribe((response) => {
             if (response.docentesTg.docente) {
-              var docentes = response.docentesTg.docente;
+              let docentes = response.docentesTg.docente;
               const vinculados: any[] = [];
               docentes.forEach((docente: any) => {
                 if (this.docenteVinculado(docente.id)) {

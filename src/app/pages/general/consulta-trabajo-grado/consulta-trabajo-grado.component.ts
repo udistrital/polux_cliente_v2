@@ -16,6 +16,9 @@ import { EspacioAcademicoInscritoDetalle } from 'src/app/shared/models/espacioAc
 import { AsignaturaTrabajoGradoDetalle } from 'src/app/shared/models/asignaturaTrabajoGrado.model';
 import { Settings } from 'angular2-smart-table';
 import { SmartTableService } from '../../services/smartTableService';
+import { responseCarrera, responseDatosEstudiante, responseDocente } from 'src/app/shared/models/academica/periodo.model';
+import { EvaluacionTrabajoGrado } from 'src/app/shared/models/evaluacionTrabajoGrado.model';
+import { AreasTrabajoGrado } from 'src/app/shared/models/areasTrabajoGrado.model';
 
 class DetalleEstudiante extends EstudianteTrabajoGrado {
   datosBasicos: any;
@@ -41,7 +44,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   actas: DocumentoTrabajoGrado[] = [];
   areasConocimiento: Parametro[] = [];
   espacios: EspacioAcademicoInscritoDetalle[] = [];
-  detallePasantia: DetallePasantia | undefined;
+  detallePasantia: DetallePasantia = new DetallePasantia;
   settingsAsignaturas: Settings;
   settingsEspacios: Settings;
   settingsVinculaciones: Settings;
@@ -63,7 +66,6 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     private academica: AcademicaService,
     private smartTable: SmartTableService,
   ) {
-    this.codigo = this.userService.getCodigo();
     this.settingsAsignaturas = this.getSettings;
     this.settingsEspacios = this.getSettingsEspacios;
     this.settingsVinculaciones = this.getSettingsVinculaciones;
@@ -84,15 +86,36 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     this.parametros = consultas[0];
     this.tiposDocumento = consultas[1];
 
-    if (!!this.userService.findAction('verTodosTrabajos')) {
+    if (this.userService.findAction('verTodosTrabajos')) {
       this.showForm = true;
-    } else if (!!this.userService.findAction('verTrabajoPropio')) {
+    } else if (this.userService.findAction('verTrabajoPropio')) {
+      this.codigo = this.userService.getCodigo();
       this.cargarTrabajo();
     }
   }
 
-  public cargarTrabajo() {
+  public verificarEstudiante() {
+    if (this.codigo.length !== 11) {
+      return;
+    }
+
+    this.academica.get('datos_basicos_estudiante', this.codigo)
+      .subscribe({
+        next: (responseDatosBasicos: responseDatosEstudiante) => {
+          if (responseDatosBasicos.datosEstudianteCollection?.datosBasicosEstudiante) {
+            this.cargarTrabajo();
+          } else {
+            this.mensaje = 'No se encontraron datos asociados al código ingresado.';
+          }
+        }, error: () => {
+          this.mensaje = 'No se pudieron consultar los datos básicos del estudiante.';
+        }
+      });
+  }
+
+  private cargarTrabajo() {
     // Consultar trabajo de grado del estudiante
+    this.mensaje = '';
     this.cargando = true;
     const estadoEstudiante = this.parametros.find(p => p.CodigoAbreviacion === 'EST_ACT_PLX');
     if (!estadoEstudiante) {
@@ -110,7 +133,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             const estado = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.EstadoTrabajoGrado, this.parametros);
             const modalidad = this.parametrosCrud.findParametro(responseTrabajoGrado[0].TrabajoGrado.Modalidad, this.parametros);
 
-            if (true) { // ctrl.userRole.includes('ESTUDIANTE')
+            if (this.userService.findAction('verTrabajoPropio')) {
               this.esAnteproyectoModificable = ['AMO_PLX', 'ASMO_PLX'].includes(estado.CodigoAbreviacion);
 
               // Si el anteproyecto es viable se puede subir la primera versión del proyecto
@@ -219,7 +242,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
               .then(() => resolve())
               .catch((error) => reject(error));
           }, error: () => {
-            reject(new Error('No se pudieron consultar los estudiantes del trabajo de grado.'));
+            reject('No se pudieron consultar los estudiantes del trabajo de grado.');
           }
         });
     })
@@ -230,25 +253,29 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
       // Consultar datos básicos del estudiante
       this.academica.get('datos_basicos_estudiante', estudiante.Estudiante)
         .subscribe({
-          next: (responseDatosBasicos) => {
-            if (responseDatosBasicos.datosEstudianteCollection.datosBasicosEstudiante) {
+          next: (responseDatosBasicos: responseDatosEstudiante) => {
+            if (responseDatosBasicos.datosEstudianteCollection?.datosBasicosEstudiante) {
               estudiante.datosBasicos = responseDatosBasicos.datosEstudianteCollection.datosBasicosEstudiante[0];
 
               // Consultar nombre carrera
               this.academica.get('carrera', estudiante.datosBasicos.carrera)
                 .subscribe({
-                  next: (responseCarrera) => {
-                    estudiante.proyecto = estudiante.datosBasicos.carrera + ' - ' + responseCarrera.carrerasCollection.carrera[0].nombre;
-                    resolve();
+                  next: (responseCarrera: responseCarrera) => {
+                    if (responseCarrera.carrerasCollection?.carrera) {
+                      estudiante.proyecto = responseCarrera.carrerasCollection?.carrera[0].codigo + ' - ' + responseCarrera.carrerasCollection.carrera[0].nombre;
+                      resolve();
+                    } else {
+                      reject('No se pudo consultar el proyecto curricular del estudiante');
+                    }
                   }, error: () => {
-                    reject(new Error('No se pudo consultar el proyecto curricular del estudiante'));
+                    reject('No se pudo consultar el proyecto curricular del estudiante');
                   }
                 });
             } else {
-              reject(new Error('No se pudieron consultar los datos básicos del estudiante.'));
+              reject('No se pudieron consultar los datos básicos del estudiante.');
             }
           }, error: () => {
-            reject(new Error('No se pudieron consultar los datos básicos del estudiante.'));
+            reject('No se pudieron consultar los datos básicos del estudiante.');
           }
         });
     });
@@ -259,7 +286,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
       const payloadAsignaturas = `query=TrabajoGrado:${trabajoGradoId}&limit=2`;
       this.poluxCrud.get('asignatura_trabajo_grado', payloadAsignaturas)
         .subscribe({
-          next: (responseAsignaturas) => {
+          next: (responseAsignaturas: AsignaturaTrabajoGradoDetalle[]) => {
             this.asignaturas = responseAsignaturas;
             this.asignaturas.map((rev) => this.parametrosCrud.fillPropiedad(rev, 'EstadoAsignaturaTrabajoGrado', this.parametros));
             if (responseAsignaturas.length) {
@@ -307,7 +334,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
         return;
       }
 
-      const payloadActaSocializacion = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado?.Id}&limit=1`;
+      const payloadActaSocializacion = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
       this.poluxCrud.get('documento_trabajo_grado', payloadActaSocializacion)
         .subscribe({
           next: (responseActaSocializacion: DocumentoTrabajoGrado[]) => {
@@ -325,7 +352,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   private getVinculaciones(): Promise<void> {
     // Se consultan los vinculados
     return new Promise((resolve, reject) => {
-      const payloadVinculados = `query=Activo:True,TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadVinculados = `query=Activo:True,TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('vinculacion_trabajo_grado', payloadVinculados)
         .subscribe({
           next: async (responseVinculados: any[]) => {
@@ -357,13 +384,13 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
 
 
   private getExterno(vinculacion: VinculacionTrabajoGradoDetalle): Promise<void> {
+    const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
     return new Promise((resolve, reject) => {
-      const payloadVinculado = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
       this.poluxCrud.get('detalle_pasantia', payloadVinculado)
         .subscribe({
           next: (dataExterno: DetallePasantia[]) => {
             if (dataExterno.length > 0) {
-              var temp = dataExterno[0].Observaciones.split(' y dirigida por ');
+              let temp = dataExterno[0].Observaciones.split(' y dirigida por ');
               temp = temp[1].split(' con número de identificacion ');
               vinculacion.Nombre = temp[0];
               resolve();
@@ -381,8 +408,8 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
     return new Promise((resolve, reject) => {
       this.academica.get('docente_tg', `${vinculacion.Usuario}`)
         .subscribe({
-          next: (docente) => {
-            if (docente.docenteTg.docente) {
+          next: (docente: responseDocente) => {
+            if (docente.docenteTg?.docente) {
               vinculacion.Nombre = docente.docenteTg.docente[0].nombre;
               resolve();
             } else {
@@ -404,7 +431,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
         const payloadEvaluacion = `limit=1&query=VinculacionTrabajoGrado:${vinculacion.Id}`
         this.poluxCrud.get('evaluacion_trabajo_grado', payloadEvaluacion)
           .subscribe({
-            next: (responseEvaluacion) => {
+            next: (responseEvaluacion: EvaluacionTrabajoGrado[]) => {
               if (responseEvaluacion.length > 0) {
                 // Si ya registró la nota
                 vinculacion.Nota = responseEvaluacion[0].Nota; // Revisar
@@ -418,17 +445,17 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
             }, error: () => {
               reject('No se pudo consultar la evaluación del trabajo de grado')
             }
-          })
+          });
       }
     });
   }
 
   private cargarAreasConocimiento(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const payloadAreas = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadAreas = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('areas_trabajo_grado', payloadAreas)
         .subscribe({
-          next: (responseAreasConocimiento: any[]) => {
+          next: (responseAreasConocimiento: AreasTrabajoGrado[]) => {
             responseAreasConocimiento.forEach((area) => {
               this.areasConocimiento.push(this.parametros.find(p => p.Id === area.AreaConocimiento) || new Parametro);
             })
@@ -443,7 +470,7 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   private getEspaciosAcademicosInscritos(): Promise<void> {
     return new Promise((resolve, reject) => {
 
-      const payloadEspaciosAcademicosInscritos = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=0`;
+      const payloadEspaciosAcademicosInscritos = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=0`;
       this.poluxCrud.get('espacio_academico_inscrito', payloadEspaciosAcademicosInscritos)
         .subscribe({
           next: async (responseEspacios) => {
@@ -486,18 +513,18 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   }
 
   private getActas(): Promise<void> {
+    const tipoDocumento = this.tiposDocumento.find(p => p.CodigoAbreviacion === 'ACT_PLX');
     return new Promise((resolve, reject) => {
       // Se buscan los documentos de tipo acta de seguimiento
-      const tipoDocumento = this.tiposDocumento.find(p => p.CodigoAbreviacion === 'ACT_PLX');
       if (!tipoDocumento) {
         reject('No se pudieron consultar los documentos asociados al trabajo de grado.');
         return;
       }
 
-      var payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado?.Id}&limit: 0`;
+      const payloadActas = `query=DocumentoEscrito.TipoDocumentoEscrito:${tipoDocumento.Id},TrabajoGrado:${this.trabajoGrado.Id}&limit: 0`;
       this.poluxCrud.get('documento_trabajo_grado', payloadActas)
         .subscribe({
-          next: (responseActas) => {
+          next: (responseActas: DocumentoTrabajoGrado[]) => {
             this.actas = responseActas;
             resolve();
           }, error: () => {
@@ -508,13 +535,13 @@ export class ConsultaTrabajoGradoComponent implements OnInit {
   }
 
   private getDetallePasantia(): Promise<void> {
+    const payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado.Id}&limit=1`;
     return new Promise((resolve, reject) => {
-      var payloadPasantia = `query=TrabajoGrado:${this.trabajoGrado?.Id}&limit=1`;
       this.poluxCrud.get('detalle_pasantia', payloadPasantia)
         .subscribe({
-          next: (responsePasantia) => {
+          next: (responsePasantia: DetallePasantia[]) => {
             if (responsePasantia.length > 0) {
-              this.detallePasantia = responsePasantia[0].Observaciones;
+              this.detallePasantia = responsePasantia[0];
               resolve();
             } else {
               reject('No hay detalles de la pasantia registrados.');

@@ -1,0 +1,38 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>
+            Publicación de espacios académicos.
+        </mat-card-title>
+    </mat-card-header>
+    <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+    <mat-card-content>
+        <p *ngIf="mensaje">{{mensaje}}</p>
+
+        <div *ngIf="!mensaje">
+            <mat-form-field style="width: 100%;">
+                <mat-label>Carrera</mat-label>
+                <mat-select [(ngModel)]="carreraSeleccionada" (selectionChange)="getPensums()">
+                    <mat-option value=''>Seleccionar</mat-option>
+                    <mat-option *ngFor="let carrera of carreras" [value]="carrera.codigo_proyecto_curricular">
+                        {{ carrera.codigo_proyecto_curricular + ' - ' + carrera.nombre_proyecto_curricular }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field *ngIf="pensums.length">
+                <mat-label>Pénsum</mat-label>
+                <mat-select [(ngModel)]="pensumSeleccionado">
+                    <mat-option value=''>Seleccionar</mat-option>
+                    <mat-option *ngFor="let pensum of pensums" [value]="pensum.pensum">
+                        {{ pensum.pensum }}
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <app-asignaturas-pensum *ngIf="pensumSeleccionado" [carrera]="carreraSeleccionada"
+                [pensum]="pensumSeleccionado" [periodo]="periodo" [modalidad]="'POSGRADO'">
+            </app-asignaturas-pensum>
+        </div>
+
+    </mat-card-content>
+</mat-card>

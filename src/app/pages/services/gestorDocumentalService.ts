@@ -56,24 +56,26 @@ export class GestorDocumentalService {
 
     files.map(async (file) => {
       const sendFileData = [{
-        IdTipoDocumento: file.IdDocumento,
+        IdTipoDocumento: file.IdTipoDocumento,
         nombre: file.nombre,
         metadatos: {
           NombreArchivo: file.nombre,
           Tipo: 'Archivo',
-          Observaciones: file.nombre,
+          Observaciones: file.Observaciones,
           'dc:title': file.nombre,
         },
-        descripcion: file.nombre,
+        descripcion: file.descripcion,
         file: await this.fileToBase64(file.file),
       }];
 
       return this.rqManager.post(environment.GESTOR_DOCUMENTAL_SERVICE, 'document/upload', sendFileData)
-        .subscribe((dataResponse) => {
-          documentos.push(dataResponse);
-          if (documentos.length === files.length) {
-            documentsSubject.next(documentos);
-          }
+        .subscribe({
+          next: (dataResponse) => {
+            documentos.push(dataResponse);
+            if (documentos.length === files.length) {
+              documentsSubject.next(documentos);
+            }
+          }, error: (err) => documentsSubject.error(err)
         });
     });
 

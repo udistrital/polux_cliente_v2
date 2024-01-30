@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { RequestManager } from 'src/app/core/manager/request.service';
+import { periodo, responsePeriodo } from 'src/app/shared/models/academica/periodo.model';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -19,14 +20,18 @@ export class AcademicaService {
     return this.request.post(environment.ACADEMICA_SERVICE, `${endpoint}`, element);
   }
 
-  public getPeriodoAnterior(): Promise<any> {
-    return new Promise((resolve) => {
+  public getPeriodoAnterior(): Promise<periodo> {
+    return new Promise((resolve, reject) => {
       this.get('periodo_academico', 'P')
-        .subscribe((responsePeriodo) => {
-          if (responsePeriodo.periodoAcademicoCollection.periodoAcademico) {
-            resolve(responsePeriodo.periodoAcademicoCollection.periodoAcademico[0]);
-          } else {
-            resolve({});
+        .subscribe({
+          next: (responsePeriodo: responsePeriodo) => {
+            if (responsePeriodo.periodoAcademicoCollection?.periodoAcademico) {
+              resolve(responsePeriodo.periodoAcademicoCollection.periodoAcademico[0]);
+            } else {
+              reject('Ocurrió un error consultando la información del calendario académico');
+            }
+          }, error: () => {
+            reject('Ocurrió un error consultando la información del calendario académico')
           }
         });
     })

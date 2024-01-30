@@ -438,7 +438,7 @@ export class CrudSolicitudesComponent implements OnInit {
                 const payload = `query=VinculacionTrabajoGrado:${vinculacion_trabajo_grado[i].Id}&limit=0`;
                 this.request.get(environment.POLUX_SERVICE, `evaluacion_trabajo_grado?${payload}`)
                   .subscribe((evaluacion_trabajo_grado_results) => {
-                    for (var i = 0; i < evaluacion_trabajo_grado_results.length; i++) {
+                    for (let i = 0; i < evaluacion_trabajo_grado_results.length; i++) {
                       if (evaluacion_trabajo_grado_results[i][0].Nota >= 0) {
                         //CAMBIAR CUANDO SE VAYA A SUBIR A PRODUCCIÓN
                         resolve(false);
@@ -530,12 +530,12 @@ export class CrudSolicitudesComponent implements OnInit {
   };
 
   private postSolicitud(detalles: DetalleTipoSolicitudForm[]) {
-    //var data_solicitud = [];
-    var data_solicitud = {};
-    var data_detalles: any = [];
-    var data_usuarios = [];
+    //let data_solicitud = [];
+    let data_solicitud = {};
+    let data_detalles: any = [];
+    let data_usuarios = [];
     let dataRespuesta: any = {};
-    var fecha = new Date();
+    let fecha = new Date();
 
     if (this.trabajoGradoId) {
       data_solicitud = {
